@@ -1,0 +1,127 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "dash": {
+      "video": [
+        {
+          "id": 120,
+          "baseUrl": "https://video.media.invalid/av1-primary.m4s?deadline=1&token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 8000000,
+          "mimeType": "video/mp4",
+          "codecs": "av01.0.12M.10",
+          "codecid": 13,
+          "width": 3840,
+          "height": 2160,
+          "frameRate": "60"
+        },
+        {
+          "id": 125,
+          "base_url": "https://video.media.invalid/hdr-primary.m4s?sig=synthetic",
+          "backup_url": [],
+          "bandwidth": 6500000,
+          "mime_type": "video/mp4",
+          "codecs": "hev1.2.4.L153.B0",
+          "codecid": 12,
+          "width": 3840,
+          "height": 2160,
+          "frame_rate": "30000/1001"
+        },
+        {
+          "id": 126,
+          "baseUrl": "https://video.media.invalid/dolby-primary.m4s?token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 6200000,
+          "mimeType": "video/mp4",
+          "codecs": "hev1.2.4.L153.B0",
+          "codecid": 12,
+          "width": 3840,
+          "height": 2160,
+          "frameRate": "30"
+        },
+        {
+          "id": 80,
+          "baseUrl": "https://video.media.invalid/avc-primary.m4s?deadline=1&w_rid=synthetic",
+          "backupUrl": [
+            "https://video-backup.media.invalid/avc-backup.m4s?token=synthetic",
+            "https://video.media.invalid/avc-primary.m4s?deadline=1&w_rid=synthetic"
+          ],
+          "bandwidth": 5000000,
+          "mimeType": "video/mp4",
+          "codecs": "avc1.640028",
+          "codecid": 7,
+          "width": 1920,
+          "height": 1080,
+          "frameRate": "30"
+        },
+        {
+          "id": 80,
+          "base_url": "https://video.media.invalid/hevc-primary.m4s?sig=synthetic",
+          "backup_url": [],
+          "bandwidth": 3500000,
+          "mime_type": "video/mp4",
+          "codecs": "hev1.1.6.L120.90",
+          "codecid": 12,
+          "width": 1920,
+          "height": 1080,
+          "frame_rate": "60"
+        },
+        {
+          "id": 64,
+          "baseUrl": "https://video.media.invalid/avc-720.m4s?token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 2500000,
+          "mimeType": "video/mp4",
+          "codecs": "avc1.64001f",
+          "codecid": 7,
+          "width": 1280,
+          "height": 720,
+          "frameRate": "30"
+        }
+      ],
+      "audio": [
+        {
+          "id": 30280,
+          "baseUrl": "https://audio.media.invalid/aac-192.m4s?token=synthetic",
+          "backupUrl": ["https://audio-backup.media.invalid/aac-192.m4s?sig=synthetic"],
+          "bandwidth": 192000,
+          "mimeType": "audio/mp4",
+          "codecs": "mp4a.40.2",
+          "audio_sample_rate": 48000,
+          "channels": 2
+        },
+        {
+          "id": 30232,
+          "base_url": "https://audio.media.invalid/aac-128.m4s?token=synthetic",
+          "backup_url": [],
+          "bandwidth": 128000,
+          "mime_type": "audio/mp4",
+          "codecs": "mp4a.40.2"
+        }
+      ],
+      "dolby": {
+        "audio": [
+          {
+            "id": 30250,
+            "baseUrl": "https://audio.media.invalid/eac3.m4s?token=synthetic",
+            "backupUrl": [],
+            "bandwidth": 448000,
+            "mimeType": "audio/mp4",
+            "codecs": "ec-3"
+          }
+        ]
+      },
+      "flac": {
+        "audio": {
+          "id": 30251,
+          "baseUrl": "https://audio.media.invalid/flac.m4s?token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 900000,
+          "mimeType": "audio/flac",
+          "codecs": "fLaC"
+        }
+      }
+    }
+  }
+}

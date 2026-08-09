@@ -1,0 +1,53 @@
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+.ruff_cache/
+.hypothesis/
+.uv-cache/
+.uv-python/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environments and builds
+.venv/
+build/
+dist/
+*.spec
+
+# Local references: nested repositories are never part of VelaFetch
+/references/
+
+# Downloads and resumable task data
+/downloads/
+/.velafetch/
+/tmp/
+/temp/
+*.part
+*.chunk
+*.aria2
+/*.log
+
+# Credentials and machine-local configuration
+/.env
+/.env.*
+!/.env.example
+/config.local.*
+*cookies*.txt
+*credentials*.json
+qrcode.png
+
+# Future research data must never be committed
+/research/private/
+/research/captures/
+/research/keys/
+/research/licenses/
+/research/device-data/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
