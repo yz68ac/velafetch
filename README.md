@@ -235,8 +235,8 @@ Tests are offline and use an in-memory HTTP fake plus synthetic `.invalid` fixtu
 mandatory coverage percentage; tests are used to explain behavior, preserve contracts, and
 reproduce real bugs.
 
-See [TODO.md](TODO.md) for the roadmap and the milestone notes for [M4](docs/m4-plan.md),
-[M5](docs/m5-plan.md), [M6](docs/m6-plan.md), and [M7](docs/m7-plan.md).
+Implementation notes are available for [M4](docs/m4-plan.md), [M5](docs/m5-plan.md),
+[M6](docs/m6-plan.md), and [M7](docs/m7-plan.md).
 
 ## Legal and security
 

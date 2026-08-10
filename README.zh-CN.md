@@ -224,8 +224,8 @@ uv build
 普通测试完全离线，使用内存 HTTP fake 和合成 `.invalid` fixtures。项目不强制固定覆盖率；
 测试用于解释行为、保护已有契约和复现真实 bug。
 
-路线图见 [TODO.md](TODO.md)，里程碑记录见 [M4](docs/m4-plan.md)、[M5](docs/m5-plan.md)、
-[M6](docs/m6-plan.md) 和 [M7](docs/m7-plan.md)。
+实现记录见 [M4](docs/m4-plan.md)、[M5](docs/m5-plan.md)、[M6](docs/m6-plan.md) 和
+[M7](docs/m7-plan.md)。
 
 ## 法律与安全边界
 

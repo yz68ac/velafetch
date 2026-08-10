@@ -31,6 +31,14 @@ dist/
 *.aria2
 /*.log
 
+# Accidental media output written to the repository root
+/*.mp4
+/*.m4a
+/*.webm
+/*.cover.*
+/*.srt
+/*.danmaku.xml
+
 # Credentials and machine-local configuration
 /.env
 /.env.*
