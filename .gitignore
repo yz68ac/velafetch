@@ -21,6 +21,9 @@ dist/
 # Local references: nested repositories are never part of VelaFetch
 /references/
 
+# Local development roadmap
+/TODO.md
+
 # Downloads and resumable task data
 /downloads/
 /.velafetch/
