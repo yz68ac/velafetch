@@ -35,3 +35,7 @@ class SelectionError(VelaFetchError):
 
 class DownloadError(VelaFetchError):
     """A media transfer, FFmpeg run, or output operation failed."""
+
+
+class AuthenticationError(VelaFetchError):
+    """A local credential or Bilibili login operation failed safely."""

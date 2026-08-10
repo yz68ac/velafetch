@@ -6,6 +6,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from email.utils import parsedate_to_datetime
+from typing import cast
 from urllib.parse import urlencode
 
 from velafetch.domain.models import MediaCollection, MediaItem, MediaResourceKind
@@ -62,6 +63,29 @@ _BANGUMI_PLAY_ENDPOINT = "https://api.bilibili.com/pgc/player/web/playurl"
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
+def _enabled_flag(value: object) -> bool:
+    return value is not None and value is not False and value != 0 and value != "" and value != "0"
+
+
+def _contains_drm(data: Mapping[str, object]) -> bool:
+    if _enabled_flag(data.get("is_drm")) or _enabled_flag(data.get("drm_type")):
+        return True
+    dash_value = data.get("dash")
+    if not isinstance(dash_value, dict):
+        return False
+    dash = cast("dict[str, object]", dash_value)
+    if _enabled_flag(dash.get("drm_type")):
+        return True
+    for collection_name in ("video", "audio"):
+        collection = dash.get(collection_name)
+        if not isinstance(collection, list):
+            continue
+        for track in collection:
+            if isinstance(track, dict) and _enabled_flag(track.get("drm_tech_type")):
+                return True
+    return False
+
+
 def _retry_after(headers: Mapping[str, str], now: int) -> float | None:
     value = headers.get("retry-after")
     if value is None:
@@ -77,7 +101,7 @@ def _retry_after(headers: Mapping[str, str], now: int) -> float | None:
 
 
 class BilibiliExtractor:
-    """Inspect public resources and resolve concrete pages just before playback."""
+    """Inspect resources and resolve concrete pages just before playback."""
 
     def __init__(
         self,
@@ -325,7 +349,10 @@ class BilibiliExtractor:
             "support_multi_audio": "true",
             "try_look": 1,
         }
-        return await self._wbi_data(_PLAY_ENDPOINT, params, stage="formats")
+        data = await self._wbi_data(_PLAY_ENDPOINT, params, stage="formats")
+        if _contains_drm(data):
+            raise UnsupportedFeatureError("DRM-protected playback is not supported.")
+        return data
 
     async def _wbi_data(
         self,
@@ -372,13 +399,15 @@ class BilibiliExtractor:
             ),
             stage="formats",
         )
-        if result.get("is_drm") is True or result.get("is_drm") == 1:
+        if _contains_drm(result):
             raise UnsupportedFeatureError("DRM-protected Bangumi playback is not supported.")
         if result.get("is_preview") is True or result.get("is_preview") == 1:
             raise UnsupportedFeatureError("Preview-only Bangumi playback is not supported.")
         internal_code = result.get("code")
         if isinstance(internal_code, int) and internal_code != 0:
-            raise UnsupportedFeatureError("This Bangumi episode is not publicly playable.")
+            raise UnsupportedFeatureError(
+                "The current account is not authorized to play this Bangumi episode."
+            )
         return result
 
     async def load_formats(self, resolved: ResolvedMedia) -> ResolvedMedia:

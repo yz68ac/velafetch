@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import cast
 
@@ -59,8 +59,12 @@ def _handler(
 
 
 def _service(handler: Callable[[FakeRequest], FakeResponse]) -> DownloadService:
-    def client_factory(timeout: float, proxy: str | None) -> FakeHttpClient:
-        del timeout, proxy
+    def client_factory(
+        timeout: float,
+        proxy: str | None,
+        cookies: Mapping[str, str] | None,
+    ) -> FakeHttpClient:
+        del timeout, proxy, cookies
         return FakeHttpClient(handler)
 
     return DownloadService(client_factory)
@@ -136,6 +140,15 @@ async def test_default_download_streams_tracks_then_muxes_and_publishes(
     assert progress[-1].kind is MediaKind.AUDIO
     assert progress[-1].downloaded == len(AUDIO_BYTES)
     assert progress[-1].total == len(AUDIO_BYTES)
+    video_progress = next(event for event in progress if event.kind is MediaKind.VIDEO)
+    assert video_progress.quality == "2160p"
+    assert video_progress.codec == "av1"
+    assert (video_progress.width, video_progress.height) == (3840, 2160)
+    assert video_progress.frame_rate_numerator == 60
+    assert video_progress.frame_rate_denominator == 1
+    assert video_progress.bitrate == 8_000_000
+    assert progress[-1].codec == "aac"
+    assert progress[-1].bitrate == 192_000
     assert not tuple(output_dir.glob(".velafetch-*"))
     assert not (output_dir / ".velafetch").exists()
 

@@ -14,6 +14,7 @@ from velafetch.application import (
     ProgressCallback,
     SubtitleOutputFormat,
 )
+from velafetch.auth import AccountSummary, AuthStatus, QrRenderer, StatusReporter
 from velafetch.domain.models import SelectionPolicy
 from velafetch.extractors import MediaResource, ResolvedMedia
 
@@ -27,6 +28,7 @@ class MediaService(Protocol):
         page_index: int | None,
         timeout: float,
         proxy: str | None,
+        anonymous: bool,
     ) -> MediaResource: ...
 
     async def formats(
@@ -37,7 +39,31 @@ class MediaService(Protocol):
         page_index: int | None,
         timeout: float,
         proxy: str | None,
+        anonymous: bool,
     ) -> ResolvedMedia: ...
+
+
+class AuthRunner(Protocol):
+    async def login(
+        self,
+        *,
+        timeout: float,
+        proxy: str | None,
+        render_qr: QrRenderer,
+        report_status: StatusReporter,
+    ) -> AccountSummary: ...
+
+    async def import_cookie(
+        self,
+        raw: str,
+        *,
+        timeout: float,
+        proxy: str | None,
+    ) -> AccountSummary: ...
+
+    async def status(self, *, timeout: float, proxy: str | None) -> AuthStatus: ...
+
+    def logout(self) -> bool: ...
 
 
 class DoctorRunner(Protocol):
@@ -71,6 +97,7 @@ class DownloadRunner(Protocol):
         danmaku: bool,
         output_template: str | None,
         progress: ProgressCallback | None,
+        anonymous: bool,
     ) -> DownloadResult: ...
 
 
@@ -79,6 +106,7 @@ class CliDependencies:
     media_service: MediaService | None = None
     doctor_service: DoctorRunner | None = None
     download_service: DownloadRunner | None = None
+    auth_service: AuthRunner | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +114,7 @@ class RuntimeOptions:
     timeout: float = 30.0
     proxy: str | None = None
     ffmpeg_path: Path | None = None
+    anonymous: bool = False
 
 
 def runtime_options(context: typer.Context) -> RuntimeOptions:

@@ -9,6 +9,8 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from urllib.parse import SplitResult, urlsplit
 
+from curl_cffi.requests import Cookies
+
 from velafetch.transport import HttpClient, HttpResponse
 
 
@@ -63,8 +65,15 @@ Handler = Callable[[FakeRequest], FakeResponse]
 
 
 class FakeHttpClient(HttpClient):
-    def __init__(self, handler: Handler) -> None:
+    def __init__(
+        self,
+        handler: Handler,
+        cookies: Mapping[str, str] | None = None,
+    ) -> None:
         self._handler = handler
+        self.cookies = Cookies()
+        for name, value in (cookies or {}).items():
+            self.cookies.set(name, value, domain=".bilibili.com", path="/", secure=True)
 
     async def __aenter__(self) -> FakeHttpClient:
         return self

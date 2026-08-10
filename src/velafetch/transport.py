@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import AbstractAsyncContextManager
 from typing import Protocol, Self, cast
 
 from curl_cffi import CurlOpt
-from curl_cffi.requests import AsyncSession
+from curl_cffi.requests import AsyncSession, Cookies
 from curl_cffi.requests.exceptions import RequestException as RequestError
 
-__all__ = ["HttpClient", "HttpResponse", "RequestError", "create_http_client"]
+__all__ = [
+    "HttpClient",
+    "HttpClientFactory",
+    "HttpResponse",
+    "RequestError",
+    "create_http_client",
+]
 
 
 class HttpResponse(Protocol):
@@ -25,6 +31,8 @@ class HttpResponse(Protocol):
 
 
 class HttpClient(Protocol):
+    cookies: Cookies
+
     async def __aenter__(self) -> Self: ...
 
     async def __aexit__(
@@ -50,9 +58,19 @@ class HttpClient(Protocol):
     ) -> AbstractAsyncContextManager[HttpResponse]: ...
 
 
-def create_http_client(timeout: float, proxy: str | None) -> HttpClient:
+HttpClientFactory = Callable[[float, str | None, Mapping[str, str] | None], HttpClient]
+
+
+def create_http_client(
+    timeout: float,
+    proxy: str | None,
+    bilibili_cookies: Mapping[str, str] | None = None,
+) -> HttpClient:
     """Create one sequential session with curl_cffi's bundled Chrome profile."""
 
+    cookie_jar = Cookies()
+    for name, value in (bilibili_cookies or {}).items():
+        cookie_jar.set(name, value, domain=".bilibili.com", path="/", secure=True)
     session = AsyncSession(
         timeout=timeout,
         proxy=proxy,
@@ -63,6 +81,7 @@ def create_http_client(timeout: float, proxy: str | None) -> HttpClient:
         max_redirects=10,
         max_clients=1,
         verify=True,
+        cookies=cookie_jar,
         curl_options=None if proxy else {CurlOpt.PROXY: ""},
     )
     return cast("HttpClient", session)

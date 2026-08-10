@@ -9,7 +9,9 @@ import typer
 
 from velafetch import __version__
 from velafetch.application import DoctorService, DownloadService, MediaApplicationService
+from velafetch.auth import AuthService, CredentialStore
 from velafetch.cli.commands import (
+    register_auth_commands,
     register_doctor_command,
     register_download_command,
     register_inspection_commands,
@@ -47,6 +49,10 @@ def create_app(dependencies: CliDependencies | None = None) -> typer.Typer:
             Path | None,
             typer.Option("--ffmpeg", help="Path to FFmpeg."),
         ] = None,
+        anonymous: Annotated[
+            bool,
+            typer.Option("--anonymous", help="Ignore the locally stored Bilibili login."),
+        ] = False,
         version: Annotated[
             bool,
             typer.Option("--version", callback=_version_callback, is_eager=True),
@@ -55,12 +61,25 @@ def create_app(dependencies: CliDependencies | None = None) -> typer.Typer:
         """Run one VelaFetch command."""
 
         del version
-        context.obj = RuntimeOptions(timeout=timeout, proxy=proxy, ffmpeg_path=ffmpeg)
+        context.obj = RuntimeOptions(
+            timeout=timeout,
+            proxy=proxy,
+            ffmpeg_path=ffmpeg,
+            anonymous=anonymous,
+        )
         if context.invoked_subcommand is None:
             typer.echo(context.get_help())
 
-    register_inspection_commands(cli, effects.media_service or MediaApplicationService())
-    register_download_command(cli, effects.download_service or DownloadService())
+    credential_store = CredentialStore()
+    register_auth_commands(cli, effects.auth_service or AuthService(credential_store))
+    register_inspection_commands(
+        cli,
+        effects.media_service or MediaApplicationService(credential_store=credential_store),
+    )
+    register_download_command(
+        cli,
+        effects.download_service or DownloadService(credential_store=credential_store),
+    )
     register_doctor_command(cli, effects.doctor_service or DoctorService())
     _ = main
     return cli

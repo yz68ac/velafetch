@@ -35,3 +35,21 @@ async def test_explicit_proxy_is_passed_to_curl() -> None:
         assert CurlOpt.PROXY not in client.curl_options
     finally:
         await client.close()
+
+
+@pytest.mark.asyncio
+async def test_login_cookies_are_secure_and_scoped_only_to_bilibili() -> None:
+    client = cast(
+        "AsyncSession",
+        create_http_client(12, None, {"SESSDATA": "synthetic-secret"}),
+    )
+    try:
+        cookies = list(client.cookies.jar)
+        assert len(cookies) == 1
+        assert cookies[0].name == "SESSDATA"
+        assert cookies[0].domain == ".bilibili.com"
+        assert cookies[0].path == "/" and cookies[0].secure is True
+        assert client.cookies.get_dict(domain="media.bilivideo.com") == {}
+        assert client.cookies.get_dict(domain="subtitle.invalid") == {}
+    finally:
+        await client.close()

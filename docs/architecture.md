@@ -5,6 +5,7 @@ The command path stays explicit:
 ```text
 Typer command
   -> application service
+  -> optional cwd-local credential
   -> one curl_cffi session
   -> Bilibili resource inspection
   -> selected playback unit
@@ -25,6 +26,7 @@ inspect source -> enumerate item/page units -> preflight names
 The important modules are:
 
 - `cli`: Typer commands and human/JSON rendering.
+- `auth`: strict Cookie parsing, cwd-local credential storage, QR polling, and account validation.
 - `application/download.py`: sequential enumeration, stop/continue rules, and item results.
 - `application/media_download.py`: one unit's transfer, mux, and media publication.
 - `application/transfer.py`: one track's three attempts, backup URLs, Range resume, and length
@@ -54,6 +56,19 @@ UGC list:       OUTPUT/.velafetch/<list-id>/<BV>/page-N/<format>.<container>.par
 Private media, subtitle, and cover URLs live in `MediaSource`; its fields are excluded from repr and
 serialization. Results contain only public canonical IDs/URLs, safe messages, and final local paths.
 
+The optional credential follows a separate, short path:
+
+```text
+hidden Cookie or terminal QR -> nav validation -> ./.velafetch/credentials.json
+                                              -> .bilibili.com cookie jar
+```
+
+The credential file is plaintext by explicit project choice and is resolved from the process
+working directory. It is loaded once per media command unless the root `--anonymous` option is set.
+Cookie-jar domain scoping prevents it from following media URLs onto `.bilivideo.com` or unrelated
+sidecar hosts. QR keys, login URLs, signed media URLs, and refresh tokens are never persisted.
+
 The real HTTP session uses one bundled `chrome` profile so TLS and HTTP behavior are internally
 consistent. It does not rotate profiles or identities, and environment proxy variables are
-disabled; only the explicit CLI proxy is passed through.
+disabled; only the explicit CLI proxy is passed through. Authenticated access changes only the
+cookie jar; it does not change TLS impersonation or request concurrency.

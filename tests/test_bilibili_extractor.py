@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from typing import cast
@@ -10,7 +11,7 @@ import pytest
 
 from tests.http_fakes import FakeHttpClient, FakeRequest, FakeResponse
 from velafetch.domain.models import CodecFamily, DynamicRange, MediaItem, MediaKind
-from velafetch.errors import ExtractionError, UnsupportedFeatureError
+from velafetch.errors import AuthenticationError, ExtractionError, UnsupportedFeatureError
 from velafetch.extractors import BilibiliExtractor, parse_bilibili_input, sign_wbi_query
 
 FIXTURES = Path(__file__).parent / "fixtures" / "bilibili"
@@ -136,3 +137,27 @@ async def test_api_and_json_errors_stay_understandable() -> None:
             await extractor.get_info("BV1VF4111111")
         with pytest.raises(ExtractionError, match="API error -404"):
             await extractor.get_info("BV1VF4111111")
+
+
+@pytest.mark.asyncio
+async def test_login_required_and_drm_responses_remain_outside_the_boundary() -> None:
+    with pytest.raises(AuthenticationError, match="auth login"):
+        async with FakeHttpClient(
+            lambda _: FakeResponse(200, payload={"code": -101, "message": "not logged in"})
+        ) as client:
+            await BilibiliExtractor(client).get_info("BV1VF4111111")
+
+    def handler(request: FakeRequest) -> FakeResponse:
+        if request.url.path.endswith("/view"):
+            return FakeResponse(200, payload=_fixture("view_single.json"))
+        if request.url.path.endswith("/nav"):
+            return FakeResponse(200, payload=_fixture("nav_wbi.json"))
+        payload = copy.deepcopy(_fixture("play_dash.json"))
+        data = payload.get("data")
+        assert isinstance(data, dict)
+        data["is_drm"] = 1
+        return FakeResponse(200, payload=payload)
+
+    with pytest.raises(UnsupportedFeatureError, match="DRM"):
+        async with FakeHttpClient(handler) as client:
+            await BilibiliExtractor(client).get_formats("BV1VF4111111")

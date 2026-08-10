@@ -37,7 +37,7 @@ def emit_error(error: BaseException, *, json_output: bool) -> Never:
     elif isinstance(error, VelaFetchError):
         message, code = str(error), 1
     else:
-        message, code = f"{type(error).__name__}: {error}", 1
+        message, code = f"Unexpected internal error ({type(error).__name__}).", 1
     if json_output:
         typer.echo(json.dumps({"error": message}, ensure_ascii=False), err=True)
     else:
@@ -60,16 +60,51 @@ def download_progress() -> Iterator[ProgressCallback]:
         key = (event.unit_number, event.kind)
         task_id = tasks.get(key)
         if task_id is None:
-            description = (
-                f"({event.unit_number}/{event.unit_count}) {event.label} · "
-                f"{event.kind.value.capitalize()}"
-            )
+            description = _progress_description(event)
             task_id = progress.add_task(description, total=event.total)
             tasks[key] = task_id
         progress.update(task_id, completed=event.downloaded, total=event.total)
 
     with progress:
         yield update
+
+
+def _progress_description(event: ProgressUpdate) -> str:
+    details = [
+        f"({event.unit_number}/{event.unit_count})",
+        event.kind.value.capitalize(),
+    ]
+    if event.kind is MediaKind.VIDEO and event.quality:
+        details.append(event.quality)
+    if event.kind is MediaKind.VIDEO and event.width and event.height:
+        details.append(f"{event.width}×{event.height}")
+    if event.codec:
+        details.append(event.codec.upper())
+    if event.kind is MediaKind.VIDEO and event.dynamic_range and event.dynamic_range != "unknown":
+        details.append(event.dynamic_range.upper())
+    frame_rate = _frame_rate(event) if event.kind is MediaKind.VIDEO else None
+    if frame_rate is not None:
+        details.append(f"{frame_rate:g} fps")
+    if event.bitrate:
+        details.append(_bitrate(event.bitrate))
+    if event.channels:
+        details.append(f"{event.channels} ch")
+    if event.language:
+        details.append(event.language)
+    details.append(event.label)
+    return " · ".join(details)
+
+
+def _frame_rate(event: ProgressUpdate) -> float | None:
+    if not event.frame_rate_numerator or not event.frame_rate_denominator:
+        return None
+    return event.frame_rate_numerator / event.frame_rate_denominator
+
+
+def _bitrate(bits_per_second: int) -> str:
+    if bits_per_second >= 1_000_000:
+        return f"{bits_per_second / 1_000_000:.2f} Mbps"
+    return f"{bits_per_second / 1000:.0f} kbps"
 
 
 def emit_download(result: DownloadResult, *, json_output: bool) -> None:

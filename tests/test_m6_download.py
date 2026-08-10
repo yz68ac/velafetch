@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import cast
 from urllib.parse import parse_qs
@@ -35,8 +35,12 @@ def _fixture(name: str) -> dict[str, object]:
 
 
 def _service(handler: Callable[[FakeRequest], FakeResponse]) -> DownloadService:
-    def factory(timeout: float, proxy: str | None) -> FakeHttpClient:
-        del timeout, proxy
+    def factory(
+        timeout: float,
+        proxy: str | None,
+        cookies: Mapping[str, str] | None,
+    ) -> FakeHttpClient:
+        del timeout, proxy, cookies
         return FakeHttpClient(handler)
 
     return DownloadService(factory)

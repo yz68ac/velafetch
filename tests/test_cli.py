@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
+import velafetch.cli.commands.auth as auth_command
 from velafetch import __version__
 from velafetch.application import (
     DoctorCheck,
@@ -18,6 +21,7 @@ from velafetch.application import (
     ProgressUpdate,
     SubtitleOutputFormat,
 )
+from velafetch.auth import AccountSummary, AuthStatus, QrRenderer, StatusReporter
 from velafetch.cli.app import CliDependencies, app, create_app
 from velafetch.domain.models import (
     CodecFamily,
@@ -36,6 +40,11 @@ from velafetch.errors import ExtractionError
 from velafetch.extractors import ResolvedMedia
 
 runner = CliRunner()
+
+
+class TtyBuffer(io.StringIO):
+    def isatty(self) -> bool:
+        return True
 
 
 def _item() -> MediaItem:
@@ -100,8 +109,9 @@ class FakeMediaService:
         page_index: int | None,
         timeout: float,
         proxy: str | None,
+        anonymous: bool,
     ) -> MediaItem:
-        del source, item_index, page_index, timeout, proxy
+        del source, item_index, page_index, timeout, proxy, anonymous
         return _item()
 
     async def formats(
@@ -112,8 +122,9 @@ class FakeMediaService:
         page_index: int | None,
         timeout: float,
         proxy: str | None,
+        anonymous: bool,
     ) -> ResolvedMedia:
-        del source, item_index, page_index, timeout, proxy
+        del source, item_index, page_index, timeout, proxy, anonymous
         return _resolved()
 
 
@@ -126,8 +137,9 @@ class BrokenMediaService(FakeMediaService):
         page_index: int | None,
         timeout: float,
         proxy: str | None,
+        anonymous: bool,
     ) -> MediaItem:
-        del source, item_index, page_index, timeout, proxy
+        del source, item_index, page_index, timeout, proxy, anonymous
         raise ExtractionError("The fixture is broken.")
 
 
@@ -139,6 +151,53 @@ class FakeDoctor:
         del kwargs
         status = "ok" if self.ok else "failed"
         return DoctorReport((DoctorCheck("ffmpeg", status, "Synthetic check."),))
+
+
+class FakeAuth:
+    def __init__(self, status: AuthStatus | None = None, *, unexpected: bool = False) -> None:
+        self.status_result = status or AuthStatus(
+            True,
+            True,
+            AccountSummary(42, "Synthetic Pilot", 1, 2),
+            "The stored Bilibili login is valid.",
+        )
+        self.unexpected = unexpected
+        self.imported: str | None = None
+        self.logged_out = False
+
+    async def login(
+        self,
+        *,
+        timeout: float,
+        proxy: str | None,
+        render_qr: QrRenderer,
+        report_status: StatusReporter,
+    ) -> AccountSummary:
+        del timeout, proxy
+        render_qr("https://passport.bilibili.com/scan?qrcode_key=synthetic-secret")
+        report_status("Synthetic QR status.")
+        return AccountSummary(42, "Synthetic Pilot", 1, 2)
+
+    async def import_cookie(
+        self,
+        raw: str,
+        *,
+        timeout: float,
+        proxy: str | None,
+    ) -> AccountSummary:
+        del timeout, proxy
+        if self.unexpected:
+            raise RuntimeError(f"failed with private Cookie {raw}")
+        self.imported = raw
+        return AccountSummary(42, "Synthetic Pilot", 1, 2)
+
+    async def status(self, *, timeout: float, proxy: str | None) -> AuthStatus:
+        del timeout, proxy
+        return self.status_result
+
+    def logout(self) -> bool:
+        self.logged_out = True
+        return True
 
 
 class FakeDownload:
@@ -165,6 +224,7 @@ class FakeDownload:
         danmaku: bool,
         output_template: str | None,
         progress: ProgressCallback | None,
+        anonymous: bool,
     ) -> DownloadResult:
         self.received = {
             "source": source,
@@ -181,10 +241,28 @@ class FakeDownload:
             "subtitle_format": subtitle_format,
             "danmaku": danmaku,
             "output_template": output_template,
+            "anonymous": anonymous,
         }
         output = output_dir.resolve() / "Vela Synthetic Flight.video.mp4"
         if progress is not None:
-            progress(ProgressUpdate(1, 1, "Synthetic", MediaKind.VIDEO, 3, 3))
+            progress(
+                ProgressUpdate(
+                    1,
+                    1,
+                    "Synthetic",
+                    MediaKind.VIDEO,
+                    3,
+                    3,
+                    quality="1080p",
+                    codec="avc",
+                    width=1920,
+                    height=1080,
+                    frame_rate_numerator=30,
+                    frame_rate_denominator=1,
+                    bitrate=5_000_000,
+                    dynamic_range="sdr",
+                )
+            )
         return DownloadResult(
             (
                 DownloadItemResult(
@@ -205,6 +283,7 @@ def _app(
     broken: bool = False,
     doctor_ok: bool = True,
     download: FakeDownload | None = None,
+    auth: FakeAuth | None = None,
 ):
     media = BrokenMediaService() if broken else FakeMediaService()
     return create_app(
@@ -212,6 +291,7 @@ def _app(
             media_service=media,
             doctor_service=FakeDoctor(doctor_ok),
             download_service=download or FakeDownload(),
+            auth_service=auth or FakeAuth(),
         )
     )
 
@@ -223,7 +303,8 @@ def test_help_and_version() -> None:
     assert help_result.exit_code == 0
     assert "Usage:" in help_result.stdout
     assert "--timeout" in help_result.stdout
-    assert all(command in help_result.stdout for command in ("info", "formats", "doctor"))
+    assert all(command in help_result.stdout for command in ("auth", "info", "formats", "doctor"))
+    assert "--anonymous" in help_result.stdout
     assert "--config" not in help_result.stdout
     assert version_result.stdout.strip() == f"velafetch {__version__}"
 
@@ -267,6 +348,10 @@ def test_download_runs_and_rejects_invalid_modes() -> None:
     assert result.exit_code == 0
     assert "Saved:" in result.stdout
     assert "Vela Synthetic Flight.video.mp4" in result.stdout
+    assert "Video" in result.stderr
+    assert "1080p" in result.stderr
+    assert "1920×1080" in result.stderr
+    assert "AVC" in result.stderr
     assert invalid.exit_code == 2
     assert "mutually exclusive" in invalid.stderr
 
@@ -311,6 +396,17 @@ def test_m6_download_options_reach_the_service_and_json_disables_progress() -> N
     assert "\x1b[" not in result.stdout + result.stderr
 
 
+def test_anonymous_root_option_reaches_media_commands() -> None:
+    service = FakeDownload()
+    result = runner.invoke(
+        _app(download=service),
+        ["--anonymous", "download", "BV1Demo", "--video-only"],
+    )
+
+    assert result.exit_code == 0
+    assert service.received["anonymous"] is True
+
+
 def test_batch_selection_conflicts_and_partial_json_result_contract() -> None:
     conflict = runner.invoke(_app(), ["download", "ss47200", "--all", "--item", "2"])
     partial = runner.invoke(
@@ -326,3 +422,77 @@ def test_batch_selection_conflicts_and_partial_json_result_contract() -> None:
     assert payload["ok"] is False
     assert payload["items"][0]["status"] == "partial"
     assert payload["items"][0]["error"] == "Synthetic subtitle failure."
+
+
+def test_auth_status_import_and_logout_are_safe() -> None:
+    service = FakeAuth()
+    application = _app(auth=service)
+
+    status = runner.invoke(application, ["auth", "status", "--json"])
+    imported = runner.invoke(
+        application,
+        ["auth", "import-cookie", "--stdin"],
+        input="SESSDATA=synthetic-cli-secret",
+    )
+    logout = runner.invoke(application, ["auth", "logout"])
+
+    payload = json.loads(status.stdout)
+    assert status.exit_code == 0 and payload["logged_in"] is True
+    assert payload["account"]["username"] == "Synthetic Pilot"
+    assert imported.exit_code == 0 and service.imported == "SESSDATA=synthetic-cli-secret"
+    assert "synthetic-cli-secret" not in imported.stdout + imported.stderr
+    assert logout.exit_code == 0 and service.logged_out is True
+
+
+def test_invalid_auth_status_is_a_complete_json_result() -> None:
+    service = FakeAuth(
+        AuthStatus(
+            True,
+            False,
+            AccountSummary(42, "Synthetic Pilot", 1, 2),
+            "The stored Bilibili login is invalid or expired.",
+        )
+    )
+
+    result = runner.invoke(_app(auth=service), ["auth", "status", "--json"])
+
+    assert result.exit_code == 1 and result.stderr == ""
+    assert json.loads(result.stdout)["logged_in"] is False
+
+
+def test_qr_login_requires_a_terminal_and_success_never_prints_the_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rejected = runner.invoke(_app(), ["auth", "login"])
+    monkeypatch.setattr(auth_command, "_interactive_terminal", lambda: True)
+    monkeypatch.setattr(auth_command, "_render_qr", lambda _: None)
+
+    success = runner.invoke(_app(), ["auth", "login"])
+
+    assert rejected.exit_code == 1
+    assert "interactive terminal" in rejected.stderr
+    assert success.exit_code == 0 and "Logged in as Synthetic Pilot" in success.stdout
+    assert "qrcode_key" not in success.stdout + success.stderr
+
+
+def test_real_qr_renderer_emits_only_terminal_graphics(monkeypatch: pytest.MonkeyPatch) -> None:
+    output = TtyBuffer()
+    monkeypatch.setattr(auth_command.sys, "stdout", output)
+
+    auth_command._render_qr("https://passport.bilibili.com/scan?qrcode_key=synthetic-render-secret")
+
+    rendered = output.getvalue()
+    assert rendered and "synthetic-render-secret" not in rendered
+    assert "\x1b[" in rendered
+
+
+def test_unexpected_auth_errors_do_not_echo_cookie_values() -> None:
+    result = runner.invoke(
+        _app(auth=FakeAuth(unexpected=True)),
+        ["auth", "import-cookie", "--stdin"],
+        input="SESSDATA=synthetic-cli-secret",
+    )
+
+    assert result.exit_code == 1
+    assert "Unexpected internal error (RuntimeError)." in result.stderr
+    assert "synthetic-cli-secret" not in result.stdout + result.stderr

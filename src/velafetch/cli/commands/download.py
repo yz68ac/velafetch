@@ -25,7 +25,7 @@ def register_download_command(cli: typer.Typer, service: DownloadRunner) -> None
     @cli.command()
     def download(
         context: typer.Context,
-        source: Annotated[str, typer.Argument(help="Public Bilibili video, season, or list.")],
+        source: Annotated[str, typer.Argument(help="Bilibili video, season, or list.")],
         output_dir: Annotated[Path, typer.Option("-o", help="Output directory.")] = Path("."),
         quality: Annotated[str, typer.Option("--quality", help="best or HEIGHTp.")] = "best",
         codec: Annotated[
@@ -73,7 +73,7 @@ def register_download_command(cli: typer.Typer, service: DownloadRunner) -> None
         ] = None,
         json_output: Annotated[bool, typer.Option("--json", help="Print JSON result.")] = False,
     ) -> None:
-        """Download public Bilibili videos, seasons, and collections."""
+        """Download Bilibili videos, seasons, and collections."""
 
         if sum((video_only, audio_only, no_mux)) > 1:
             raise typer.BadParameter("output modes are mutually exclusive")
@@ -117,6 +117,7 @@ def register_download_command(cli: typer.Typer, service: DownloadRunner) -> None
                         danmaku=danmaku,
                         output_template=output_template,
                         progress=progress,
+                        anonymous=options.anonymous,
                     )
                 )
         except BaseException as error:

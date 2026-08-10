@@ -1,8 +1,8 @@
 # VelaFetch
 
-VelaFetch is a Python CLI for inspecting and downloading anonymously accessible Bilibili media.
+VelaFetch is a Python CLI for inspecting and downloading public or user-authorized Bilibili media.
 The implementation keeps the request → extraction → selection → transfer path readable enough to
-study while supporting practical multi-item downloads and recovery.
+study while supporting practical multi-item downloads, recovery, and an optional local login.
 
 ## What works
 
@@ -14,11 +14,16 @@ study while supporting practical multi-item downloads and recovery.
 - Cover images and all public subtitle tracks are downloaded by default; XML danmaku is opt-in.
 - Filename templates, AV1 SDR, HEVC HDR, and JSON batch results are available.
 - `doctor` checks FFmpeg and can optionally test Bilibili connectivity.
+- `auth` can scan a Web QR code, validate a hidden Cookie, show login status, or remove the local
+  login.
 - One `curl_cffi.AsyncSession` with a fixed Chrome profile is reused for each command.
 
 ```powershell
 uv sync --group dev
 uv run velafetch --help
+
+uv run velafetch auth login
+uv run velafetch auth status
 
 uv run velafetch info BV1xxxxxxxxx --page 2
 uv run velafetch info ss47200 --json
@@ -30,6 +35,11 @@ uv run velafetch download ss47200 --item 1 --danmaku
 uv run velafetch download COLLECTION_URL --all --json -o downloads
 uv run velafetch doctor
 ```
+
+`auth login` renders a QR code only in an interactive terminal. As a fallback, `auth import-cookie`
+uses a hidden prompt; `Get-Clipboard | uv run velafetch auth import-cookie --stdin` avoids placing
+the Cookie itself in PowerShell history. VelaFetch deliberately has no `--cookie` option, Cookie
+environment variable, or credential configuration field.
 
 `--item` selects a season episode or collection entry; `--page` selects a video P. `--all` is only
 available on `download` and recursively expands every selected video's pages. Batch output goes into
@@ -51,16 +61,24 @@ Useful download options include:
 --json
 ```
 
-The root options remain `--timeout`, `--proxy`, `--ffmpeg`, and `--version`; put them before the
-subcommand. There is no configuration-file or environment-variable merge system.
+The root options are `--timeout`, `--proxy`, `--ffmpeg`, `--anonymous`, and `--version`; put them
+before the subcommand. `--anonymous` completely ignores the local login for that command. There is
+no configuration-file or environment-variable merge system.
 
-## Anonymous-access boundary
+## Login and access boundary
 
-VelaFetch does not accept cookies or credentials in M6. It does not bypass login, payment,
-membership, region restrictions, access control, or DRM. Bilibili may mark subtitle metadata with
-`need_login_subtitle`; those tracks are unavailable within this anonymous-only milestone. Asking
-for a specific unavailable language produces a partial item result, while no public subtitles in
-the default `all` mode is normal.
+By explicit project choice, the active Bilibili Cookie is stored as plaintext JSON at
+`./.velafetch/credentials.json`, relative to the current working directory. The file is Git-ignored
+and atomically replaced, but it is not encrypted: anyone who can read it can use the session. Run
+`velafetch auth logout` to remove only this file. Moving to another working directory creates an
+independent login state.
+
+The Cookie is scoped to HTTPS requests under `.bilibili.com`; it is not sent to media CDN, cover,
+or subtitle hosts. An authenticated session can expose account-visible qualities, subtitles, and
+ordinary DASH playback that the account is already authorized to access. VelaFetch does not bypass
+payment, membership, region restrictions, access control, or DRM. Expired sessions require a new
+QR login; automatic Cookie refresh is intentionally not implemented. Favorites, watch-later lists,
+password/SMS login, TV tokens, and paid-course inputs remain unsupported.
 
 The Chrome profile is fixed. VelaFetch does not rotate fingerprints, proxies, or identities.
 `--proxy` passes one explicit proxy to curl; system proxy environment variables are ignored.
@@ -87,4 +105,5 @@ Tests are offline and use an in-memory HTTP fake plus synthetic `.invalid` fixtu
 mandatory coverage percentage: tests are added to explain behavior, preserve contracts, and
 reproduce real bugs.
 
-Milestone notes: [M4](docs/m4-plan.md), [M5](docs/m5-plan.md), [M6](docs/m6-plan.md).
+Milestone notes: [M4](docs/m4-plan.md), [M5](docs/m5-plan.md), [M6](docs/m6-plan.md),
+[M7](docs/m7-plan.md).

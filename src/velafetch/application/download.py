@@ -23,13 +23,12 @@ from velafetch.application.naming import (
     unit_stem,
 )
 from velafetch.application.transfer import TrackProgressCallback
-from velafetch.domain.models import MediaKind, OutputMode, SelectionPolicy
+from velafetch.auth import CredentialStore
+from velafetch.domain.models import MediaFormat, MediaKind, OutputMode, SelectionPolicy
 from velafetch.errors import DownloadError, VelaFetchError
 from velafetch.extractors import BilibiliExtractor, ResolvedMedia
 from velafetch.selection import select_formats
-from velafetch.transport import HttpClient, create_http_client
-
-ClientFactory = Callable[[float, str | None], HttpClient]
+from velafetch.transport import HttpClientFactory, create_http_client
 
 
 class DownloadStatus(StrEnum):
@@ -47,6 +46,16 @@ class ProgressUpdate:
     kind: MediaKind
     downloaded: int
     total: int | None
+    quality: str | None = None
+    codec: str | None = None
+    width: int | None = None
+    height: int | None = None
+    frame_rate_numerator: int | None = None
+    frame_rate_denominator: int | None = None
+    bitrate: int | None = None
+    dynamic_range: str | None = None
+    channels: int | None = None
+    language: str | None = None
 
 
 ProgressCallback = Callable[[ProgressUpdate], None]
@@ -97,10 +106,15 @@ def _unique_units(
 
 
 class DownloadService:
-    """Resolve and download one or many public Bilibili playback units."""
+    """Resolve and download one or many Bilibili playback units."""
 
-    def __init__(self, client_factory: ClientFactory | None = None) -> None:
-        self._client_factory = client_factory or create_http_client
+    def __init__(
+        self,
+        client_factory: HttpClientFactory = create_http_client,
+        credential_store: CredentialStore | None = None,
+    ) -> None:
+        self._client_factory = client_factory
+        self._credential_store = credential_store or CredentialStore()
 
     async def download(
         self,
@@ -121,6 +135,7 @@ class DownloadService:
         danmaku: bool = False,
         output_template: str | None = None,
         progress: ProgressCallback | None = None,
+        anonymous: bool = False,
     ) -> DownloadResult:
         subtitle_selection = parse_subtitle_selection(subtitles)
         output_root = output_dir.expanduser().resolve()
@@ -137,7 +152,9 @@ class DownloadService:
             if ffmpeg is None:
                 raise DownloadError("FFmpeg was not found. Use --ffmpeg to provide its path.")
 
-        async with self._client_factory(timeout, proxy) as client:
+        credentials = None if anonymous else self._credential_store.load()
+        cookies = None if credentials is None else credentials.cookie_mapping()
+        async with self._client_factory(timeout, proxy, cookies) as client:
             extractor = BilibiliExtractor(client)
             units = await extractor.resolve_many(
                 source,
@@ -172,7 +189,10 @@ class DownloadService:
                             *,
                             current: int = unit_number,
                             label: str = stem,
+                            video_track: MediaFormat | None = selection.video,
+                            audio_track: MediaFormat | None = selection.audio,
                         ) -> None:
+                            track = video_track if kind is MediaKind.VIDEO else audio_track
                             progress(
                                 ProgressUpdate(
                                     current,
@@ -181,6 +201,20 @@ class DownloadService:
                                     kind,
                                     downloaded,
                                     total,
+                                    quality=track.quality_label if track else None,
+                                    codec=track.codec_family.value if track else None,
+                                    width=track.width if track else None,
+                                    height=track.height if track else None,
+                                    frame_rate_numerator=(
+                                        track.frame_rate_numerator if track else None
+                                    ),
+                                    frame_rate_denominator=(
+                                        track.frame_rate_denominator if track else None
+                                    ),
+                                    bitrate=track.bitrate if track else None,
+                                    dynamic_range=(track.dynamic_range.value if track else None),
+                                    channels=track.channels if track else None,
+                                    language=track.language if track else None,
                                 )
                             )
 

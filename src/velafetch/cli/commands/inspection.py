@@ -15,7 +15,7 @@ def register_inspection_commands(cli: typer.Typer, service: MediaService) -> Non
     @cli.command()
     def info(
         context: typer.Context,
-        source: Annotated[str, typer.Argument(help="Public Bilibili video, season, or list.")],
+        source: Annotated[str, typer.Argument(help="Bilibili video, season, or list.")],
         item_index: Annotated[
             int | None,
             typer.Option("--item", min=1, help="Select an episode or collection item."),
@@ -37,6 +37,7 @@ def register_inspection_commands(cli: typer.Typer, service: MediaService) -> Non
                     page_index=page_index,
                     timeout=options.timeout,
                     proxy=options.proxy,
+                    anonymous=options.anonymous,
                 )
             )
             rendering.emit_info(resource, json_output=json_output)
@@ -46,7 +47,7 @@ def register_inspection_commands(cli: typer.Typer, service: MediaService) -> Non
     @cli.command()
     def formats(
         context: typer.Context,
-        source: Annotated[str, typer.Argument(help="Public Bilibili video, season, or list.")],
+        source: Annotated[str, typer.Argument(help="Bilibili video, season, or list.")],
         item_index: Annotated[
             int | None,
             typer.Option("--item", min=1, help="Select an episode or collection item."),
@@ -68,6 +69,7 @@ def register_inspection_commands(cli: typer.Typer, service: MediaService) -> Non
                     page_index=page_index,
                     timeout=options.timeout,
                     proxy=options.proxy,
+                    anonymous=options.anonymous,
                 )
             )
             rendering.emit_formats(item, json_output=json_output)
