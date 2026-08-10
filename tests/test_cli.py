@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+from rich.text import Text
 from typer.testing import CliRunner
 
 import velafetch.cli.commands.auth as auth_command
@@ -40,6 +41,10 @@ from velafetch.errors import ExtractionError
 from velafetch.extractors import ResolvedMedia
 
 runner = CliRunner()
+
+
+def _plain(text: str) -> str:
+    return Text.from_ansi(text).plain
 
 
 class TtyBuffer(io.StringIO):
@@ -299,13 +304,14 @@ def _app(
 def test_help_and_version() -> None:
     help_result = runner.invoke(app, ["--help"])
     version_result = runner.invoke(app, ["--version"])
+    plain_help = _plain(help_result.stdout)
 
     assert help_result.exit_code == 0
-    assert "Usage:" in help_result.stdout
-    assert "--timeout" in help_result.stdout
-    assert all(command in help_result.stdout for command in ("auth", "info", "formats", "doctor"))
-    assert "--anonymous" in help_result.stdout
-    assert "--config" not in help_result.stdout
+    assert "Usage:" in plain_help
+    assert "--timeout" in plain_help
+    assert all(command in plain_help for command in ("auth", "info", "formats", "doctor"))
+    assert "--anonymous" in plain_help
+    assert "--config" not in plain_help
     assert version_result.stdout.strip() == f"velafetch {__version__}"
 
 
@@ -415,7 +421,7 @@ def test_batch_selection_conflicts_and_partial_json_result_contract() -> None:
     )
 
     assert conflict.exit_code == 2
-    assert "--all cannot be combined" in conflict.stderr
+    assert "--all cannot be combined" in _plain(conflict.stderr)
     assert partial.exit_code == 1
     assert partial.stderr == ""
     payload = json.loads(partial.stdout)
