@@ -1,0 +1,31 @@
+{
+  "code": 0,
+  "message": "success",
+  "result": {
+    "season_id": 47200,
+    "season_title": "Vela Public Season",
+    "cover": "https://assets.invalid/season-cover.webp?signature=synthetic",
+    "episodes": [
+      {
+        "id": 8100001,
+        "aid": 110000001,
+        "bvid": "BV1EP4111111",
+        "cid": 910000001,
+        "title": "1",
+        "long_title": "First Signal",
+        "duration": 24000,
+        "cover": "https://assets.invalid/episode-1.jpg?token=synthetic"
+      },
+      {
+        "id": 8100002,
+        "aid": 110000002,
+        "bvid": "BV1EP4111112",
+        "cid": 910000002,
+        "title": "2",
+        "long_title": "Second Signal",
+        "duration": 25000,
+        "cover": "https://assets.invalid/episode-2.jpg?token=synthetic"
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "meta": {"title": "Ignored Repeated Metadata"},
+    "archives": [
+      {
+        "aid": 120000002,
+        "bvid": "BV1US4111112",
+        "title": "Archive Two",
+        "duration": 32,
+        "pic": "https://assets.invalid/archive-2.jpg?token=synthetic"
+      },
+      {
+        "aid": 120000001,
+        "bvid": "BV1US4111111",
+        "title": "Duplicate Archive One",
+        "duration": 31
+      }
+    ],
+    "page": {"total": 2}
+  }
+}

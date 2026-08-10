@@ -1,0 +1,7 @@
+{
+  "font_size": 0.4,
+  "body": [
+    {"from": 2.5, "to": 4.0, "content": "Second cue"},
+    {"from": 0.25, "to": 1.75, "content": "First cue"}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "subtitle": {
+      "subtitles": [
+        {
+          "id": 2,
+          "lan": "en-US",
+          "lan_doc": "English",
+          "subtitle_url": "https://subtitle.invalid/en.json?token=synthetic"
+        },
+        {
+          "id": 1,
+          "lan": "zh-CN",
+          "lan_doc": "简体中文",
+          "subtitle_url": "//subtitle.invalid/zh.json?signature=synthetic"
+        }
+      ]
+    }
+  }
+}

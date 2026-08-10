@@ -1,0 +1,20 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "meta": {
+      "title": "Vela UGC Season",
+      "cover": "https://assets.invalid/ugc-season.jpg?token=synthetic"
+    },
+    "archives": [
+      {
+        "aid": 120000001,
+        "bvid": "BV1US4111111",
+        "title": "Archive One",
+        "duration": 31,
+        "pic": "https://assets.invalid/archive-1.jpg?token=synthetic"
+      }
+    ],
+    "page": {"total": 2}
+  }
+}

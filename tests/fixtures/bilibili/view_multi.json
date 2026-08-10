@@ -1,0 +1,16 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "aid": 100000010,
+    "bvid": "BV1MP4111111",
+    "title": "Vela Multi Flight",
+    "pic": "https://assets.invalid/multi-cover.jpg?token=synthetic",
+    "duration": 100,
+    "rights": {"pay": 0, "arc_pay": 0, "is_stein_gate": 0},
+    "pages": [
+      {"cid": 900000010, "page": 1, "part": "Launch", "duration": 40},
+      {"cid": 900000011, "page": 2, "part": "Orbit", "duration": 60}
+    ]
+  }
+}

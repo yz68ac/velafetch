@@ -1,0 +1,16 @@
+{
+  "code": 0,
+  "message": "0",
+  "data": {
+    "archives": [
+      {
+        "aid": 130000001,
+        "bvid": "BV1SR4111111",
+        "title": "Series Entry",
+        "duration": 45,
+        "pic": "https://assets.invalid/series-entry.png?token=synthetic"
+      }
+    ],
+    "page": {"total": 1}
+  }
+}

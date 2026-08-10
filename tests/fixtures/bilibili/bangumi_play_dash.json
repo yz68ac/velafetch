@@ -1,0 +1,34 @@
+{
+  "code": 0,
+  "message": "success",
+  "result": {
+    "is_drm": false,
+    "is_preview": false,
+    "dash": {
+      "video": [
+        {
+          "id": 80,
+          "baseUrl": "https://video.media.invalid/episode-avc.m4s?token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 3000000,
+          "mimeType": "video/mp4",
+          "codecs": "avc1.640028",
+          "codecid": 7,
+          "width": 1920,
+          "height": 1080,
+          "frameRate": "30"
+        }
+      ],
+      "audio": [
+        {
+          "id": 30280,
+          "baseUrl": "https://audio.media.invalid/episode-aac.m4s?token=synthetic",
+          "backupUrl": [],
+          "bandwidth": 192000,
+          "mimeType": "audio/mp4",
+          "codecs": "mp4a.40.2"
+        }
+      ]
+    }
+  }
+}
