@@ -1,6 +1,6 @@
 {
-  "code": 0,
-  "message": "0",
+  "code": -101,
+  "message": "not logged in",
   "data": {
     "isLogin": false,
     "wbi_img": {

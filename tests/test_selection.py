@@ -8,6 +8,7 @@ from velafetch.domain.models import (
     CodecFamily,
     CodecPreference,
     DynamicRange,
+    DynamicRangePreference,
     MediaFormat,
     MediaKind,
     MediaPage,
@@ -31,6 +32,7 @@ def _video(
     fps: int = 30,
     bitrate: int = 1_000_000,
     supported: bool = True,
+    dynamic_range: DynamicRange = DynamicRange.SDR,
 ) -> MediaFormat:
     return MediaFormat(
         format_id=format_id,
@@ -50,7 +52,7 @@ def _video(
         height=height,
         frame_rate_numerator=fps,
         frame_rate_denominator=1,
-        dynamic_range=DynamicRange.SDR,
+        dynamic_range=dynamic_range,
         download_supported=supported,
         unsupported_reason=None if supported else "Deferred.",
     )
@@ -93,6 +95,54 @@ def test_best_ignores_deferred_tracks_and_auto_prefers_avc_at_the_best_height() 
     assert selection.video.format_id == "avc-1080"
     assert selection.audio is not None
     assert selection.audio.format_id == "aac-192"
+
+
+def test_auto_codec_order_is_avc_then_hevc_then_av1_at_the_same_height() -> None:
+    selection = select_formats(
+        _page(
+            _video("av1", 2160, CodecFamily.AV1, fps=120, bitrate=12_000_000),
+            _video("hevc", 2160, CodecFamily.HEVC, fps=60, bitrate=8_000_000),
+            _video("avc", 2160, CodecFamily.AVC, fps=30, bitrate=6_000_000),
+            _audio("aac", 128_000),
+        ),
+        SelectionPolicy(),
+    )
+
+    assert selection.video is not None
+    assert selection.video.format_id == "avc"
+
+
+def test_av1_sdr_and_hevc_hdr_are_strictly_selectable() -> None:
+    page = _page(
+        _video("av1-sdr", 2160, CodecFamily.AV1),
+        _video(
+            "hevc-hdr",
+            2160,
+            CodecFamily.HEVC,
+            dynamic_range=DynamicRange.HDR,
+        ),
+        _audio("aac", 128_000),
+    )
+
+    av1 = select_formats(page, SelectionPolicy(codec=CodecPreference.AV1))
+    hdr = select_formats(
+        page,
+        SelectionPolicy(
+            codec=CodecPreference.HEVC,
+            dynamic_range=DynamicRangePreference.HDR,
+        ),
+    )
+
+    assert av1.video is not None and av1.video.format_id == "av1-sdr"
+    assert hdr.video is not None and hdr.video.format_id == "hevc-hdr"
+    with pytest.raises(SelectionError, match="requested codec"):
+        select_formats(
+            page,
+            SelectionPolicy(
+                codec=CodecPreference.AVC,
+                dynamic_range=DynamicRangePreference.HDR,
+            ),
+        )
 
 
 def test_quality_limit_selects_the_highest_height_not_exceeding_the_request() -> None:

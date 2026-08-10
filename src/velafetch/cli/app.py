@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 
 from velafetch import __version__
-from velafetch.application import DoctorService, MediaApplicationService
+from velafetch.application import DoctorService, DownloadService, MediaApplicationService
 from velafetch.cli.commands import (
     register_doctor_command,
     register_download_command,
@@ -29,7 +29,7 @@ def create_app(dependencies: CliDependencies | None = None) -> typer.Typer:
     effects = dependencies or CliDependencies()
     cli = typer.Typer(
         add_completion=False,
-        help="A small Bilibili CLI Downloader.",
+        help="A practical Bilibili CLI downloader.",
         invoke_without_command=True,
         no_args_is_help=False,
         pretty_exceptions_enable=False,
@@ -60,7 +60,7 @@ def create_app(dependencies: CliDependencies | None = None) -> typer.Typer:
             typer.echo(context.get_help())
 
     register_inspection_commands(cli, effects.media_service or MediaApplicationService())
-    register_download_command(cli)
+    register_download_command(cli, effects.download_service or DownloadService())
     register_doctor_command(cli, effects.doctor_service or DoctorService())
     _ = main
     return cli

@@ -8,14 +8,36 @@ from typing import Protocol
 
 import typer
 
-from velafetch.application import DoctorReport
-from velafetch.domain.models import MediaItem
+from velafetch.application import (
+    DoctorReport,
+    DownloadResult,
+    ProgressCallback,
+    SubtitleOutputFormat,
+)
+from velafetch.domain.models import SelectionPolicy
+from velafetch.extractors import MediaResource, ResolvedMedia
 
 
 class MediaService(Protocol):
-    async def info(self, source: str, *, timeout: float, proxy: str | None) -> MediaItem: ...
+    async def info(
+        self,
+        source: str,
+        *,
+        item_index: int | None,
+        page_index: int | None,
+        timeout: float,
+        proxy: str | None,
+    ) -> MediaResource: ...
 
-    async def formats(self, source: str, *, timeout: float, proxy: str | None) -> MediaItem: ...
+    async def formats(
+        self,
+        source: str,
+        *,
+        item_index: int | None,
+        page_index: int | None,
+        timeout: float,
+        proxy: str | None,
+    ) -> ResolvedMedia: ...
 
 
 class DoctorRunner(Protocol):
@@ -29,10 +51,34 @@ class DoctorRunner(Protocol):
     ) -> DoctorReport: ...
 
 
+class DownloadRunner(Protocol):
+    async def download(
+        self,
+        source: str,
+        *,
+        output_dir: Path,
+        policy: SelectionPolicy,
+        item_index: int | None,
+        page_index: int | None,
+        all_items: bool,
+        overwrite: bool,
+        ffmpeg_path: Path | None,
+        timeout: float,
+        proxy: str | None,
+        cover: bool,
+        subtitles: str,
+        subtitle_format: SubtitleOutputFormat,
+        danmaku: bool,
+        output_template: str | None,
+        progress: ProgressCallback | None,
+    ) -> DownloadResult: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CliDependencies:
     media_service: MediaService | None = None
     doctor_service: DoctorRunner | None = None
+    download_service: DownloadRunner | None = None
 
 
 @dataclass(frozen=True, slots=True)

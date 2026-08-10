@@ -5,14 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import cast
 
-from httpx import Response
-
 from velafetch.errors import ExtractionError, UnsupportedFeatureError
+from velafetch.transport import HttpResponse
 
 JsonMapping = dict[str, object]
 
 
-def read_json_response(response: Response, *, stage: str) -> JsonMapping:
+def read_json_response(response: HttpResponse, *, stage: str) -> JsonMapping:
     try:
         payload = cast("object", response.json())
     except ValueError as error:
@@ -77,3 +76,15 @@ def api_data(payload: JsonMapping, *, stage: str) -> JsonMapping:
             raise UnsupportedFeatureError("This video needs access that VelaFetch does not have.")
         raise ExtractionError(f"Bilibili API error {code} during {stage}.")
     return mapping(payload.get("data"), stage=stage, field="data")
+
+
+def api_result(payload: JsonMapping, *, stage: str) -> JsonMapping:
+    code = api_code(payload, stage=stage)
+    if code != 0:
+        message = str(payload.get("message", ""))
+        if code == -10403 or any(
+            word in message.casefold() for word in ("login", "vip", "region", "pay")
+        ):
+            raise UnsupportedFeatureError("This content needs access that VelaFetch does not have.")
+        raise ExtractionError(f"Bilibili API error {code} during {stage}.")
+    return mapping(payload.get("result"), stage=stage, field="result")

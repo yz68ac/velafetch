@@ -31,3 +31,7 @@ class ExtractionError(VelaFetchError):
 
 class SelectionError(VelaFetchError):
     """No track matched the requested selection."""
+
+
+class DownloadError(VelaFetchError):
+    """A media transfer, FFmpeg run, or output operation failed."""

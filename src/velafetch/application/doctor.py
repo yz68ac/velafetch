@@ -7,7 +7,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-import httpx
+from velafetch.transport import RequestError, create_http_client
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,12 +68,16 @@ class DoctorService:
         if not enabled:
             return DoctorCheck("network", "skipped", "Use --network to run this check.")
         try:
-            async with httpx.AsyncClient(timeout=timeout, proxy=proxy, trust_env=False) as client:
+            async with create_http_client(timeout, proxy) as client:
                 response = await client.get("https://api.bilibili.com/x/web-interface/nav")
-                response.raise_for_status()
-                payload = response.json()
-                if not isinstance(payload, dict) or payload.get("code") != 0:
-                    raise ValueError
-        except (httpx.HTTPError, ValueError):
+                try:
+                    if not 200 <= response.status_code < 300:
+                        raise ValueError
+                    payload = response.json()
+                    if not isinstance(payload, dict) or payload.get("code") not in {0, -101}:
+                        raise ValueError
+                finally:
+                    await response.aclose()
+        except (RequestError, ValueError):
             return DoctorCheck("network", "failed", "Bilibili is not reachable.")
         return DoctorCheck("network", "ok", "Bilibili is reachable.")

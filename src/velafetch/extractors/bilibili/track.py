@@ -8,7 +8,6 @@ import re
 from collections.abc import Mapping
 from fractions import Fraction
 
-from velafetch import __version__
 from velafetch.domain.models import (
     CodecFamily,
     DynamicRange,
@@ -25,8 +24,6 @@ from velafetch.extractors.bilibili.payload import (
     required_string,
     sequence,
 )
-
-USER_AGENT = f"VelaFetch/{__version__}"
 
 
 def _codec_family(codec: str, codecid: int | None, *, kind: MediaKind) -> CodecFamily:
@@ -126,11 +123,17 @@ def _video_support(
     container: str,
 ) -> tuple[bool, str | None]:
     if dynamic_range is DynamicRange.DOLBY_VISION:
-        return False, "Dolby Vision video is planned for M6."
+        return False, "Dolby Vision is reported but not automatically muxed."
     if dynamic_range is DynamicRange.HDR:
-        return False, "HDR video is planned for M6."
+        if family is not CodecFamily.HEVC:
+            return False, "Only HEVC HDR video is currently supported."
+        if container != "mp4":
+            return False, "Only MP4 HDR video is currently supported."
+        return True, None
     if family is CodecFamily.AV1:
-        return False, "AV1 video is planned for M6."
+        if container != "mp4":
+            return False, "Only MP4 AV1 video is currently supported."
+        return True, None
     if family not in {CodecFamily.AVC, CodecFamily.HEVC}:
         return False, "This video codec is not supported by the MVP."
     if container != "mp4":
@@ -140,9 +143,9 @@ def _video_support(
 
 def _audio_support(family: CodecFamily, container: str) -> tuple[bool, str | None]:
     if family is CodecFamily.FLAC:
-        return False, "FLAC audio is planned for M6."
+        return False, "FLAC needs a more compatible output container and remains report-only."
     if family is CodecFamily.EAC3:
-        return False, "E-AC-3 audio is planned for M6."
+        return False, "E-AC-3 remains report-only for MP4 compatibility."
     if family is not CodecFamily.AAC:
         return False, "This audio codec is not supported by the MVP."
     if container != "m4a":
@@ -153,7 +156,7 @@ def _audio_support(family: CodecFamily, container: str) -> tuple[bool, str | Non
 def _media_source(track: Mapping[str, object], canonical_url: str) -> MediaSource:
     return MediaSource(
         urls=_source_urls(track),
-        required_headers={"Referer": canonical_url, "User-Agent": USER_AGENT},
+        required_headers={"Referer": canonical_url},
     )
 
 

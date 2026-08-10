@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import httpx
-
-from velafetch import __version__
-from velafetch.domain.models import MediaItem
-from velafetch.extractors import BilibiliExtractor
+from velafetch.extractors import BilibiliExtractor, MediaResource, ResolvedMedia
+from velafetch.transport import HttpClient, create_http_client
 
 
 class MediaApplicationService:
@@ -14,28 +11,34 @@ class MediaApplicationService:
         self,
         source: str,
         *,
+        item_index: int | None = None,
+        page_index: int | None = None,
         timeout: float = 30.0,
         proxy: str | None = None,
-    ) -> MediaItem:
+    ) -> MediaResource:
         async with self._client(timeout, proxy) as client:
-            return await BilibiliExtractor(client).get_info(source)
+            return await BilibiliExtractor(client).get_info(
+                source,
+                item_index=item_index,
+                page_index=page_index,
+            )
 
     async def formats(
         self,
         source: str,
         *,
+        item_index: int | None = None,
+        page_index: int | None = None,
         timeout: float = 30.0,
         proxy: str | None = None,
-    ) -> MediaItem:
+    ) -> ResolvedMedia:
         async with self._client(timeout, proxy) as client:
-            return await BilibiliExtractor(client).get_formats(source)
+            return await BilibiliExtractor(client).get_formats(
+                source,
+                item_index=item_index,
+                page_index=page_index,
+            )
 
     @staticmethod
-    def _client(timeout: float, proxy: str | None) -> httpx.AsyncClient:
-        return httpx.AsyncClient(
-            timeout=timeout,
-            proxy=proxy,
-            follow_redirects=True,
-            trust_env=False,
-            headers={"User-Agent": f"VelaFetch/{__version__}"},
-        )
+    def _client(timeout: float, proxy: str | None) -> HttpClient:
+        return create_http_client(timeout, proxy)

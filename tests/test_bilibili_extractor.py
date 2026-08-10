@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
 from pathlib import Path
 from typing import cast
 
-import httpx
 import pytest
 
-from velafetch.domain.models import CodecFamily, DynamicRange, MediaKind
+from tests.http_fakes import FakeHttpClient, FakeRequest, FakeResponse
+from velafetch.domain.models import CodecFamily, DynamicRange, MediaItem, MediaKind
 from velafetch.errors import ExtractionError, UnsupportedFeatureError
 from velafetch.extractors import BilibiliExtractor, parse_bilibili_input, sign_wbi_query
 
@@ -21,10 +20,6 @@ def _fixture(name: str) -> dict[str, object]:
     value = cast("object", json.loads((FIXTURES / name).read_text(encoding="utf-8")))
     assert isinstance(value, dict)
     return cast("dict[str, object]", value)
-
-
-def _client(handler: Callable[[httpx.Request], httpx.Response]) -> httpx.AsyncClient:
-    return httpx.AsyncClient(transport=httpx.MockTransport(handler))
 
 
 @pytest.mark.parametrize(
@@ -49,7 +44,7 @@ def test_supported_inputs_are_normalized(source: str, normalized: str) -> None:
         "BVshort",
         "https://b23.tv/BV1VF4111111",
         "https://www.bilibili.com.evil.invalid/video/BV1VF4111111",
-        "https://www.bilibili.com/bangumi/play/ss1",
+        "https://www.bilibili.com/video/BV1VF4111111?p=0",
     ],
 )
 def test_unsupported_inputs_raise_a_readable_error(source: str) -> None:
@@ -61,34 +56,36 @@ def test_unsupported_inputs_raise_a_readable_error(source: str) -> None:
 async def test_info_only_requests_metadata() -> None:
     paths: list[str] = []
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: FakeRequest) -> FakeResponse:
         paths.append(request.url.path)
-        return httpx.Response(200, json=_fixture("view_single.json"))
+        return FakeResponse(200, payload=_fixture("view_single.json"))
 
-    async with _client(handler) as client:
+    async with FakeHttpClient(handler) as client:
         item = await BilibiliExtractor(client).get_info("av100000001")
 
     assert paths == ["/x/web-interface/view"]
+    assert isinstance(item, MediaItem)
     assert item.ref.canonical_id == "BV1VF4111111"
     assert item.pages[0].formats == ()
 
 
 @pytest.mark.asyncio
 async def test_formats_projects_video_audio_and_hides_sources() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: FakeRequest) -> FakeResponse:
         if request.url.path.endswith("/view"):
             payload = _fixture("view_single.json")
         elif request.url.path.endswith("/nav"):
             payload = _fixture("nav_wbi.json")
         else:
             payload = _fixture("play_dash.json")
-        return httpx.Response(200, json=payload)
+        return FakeResponse(200, payload=payload)
 
-    async with _client(handler) as client:
-        item = await BilibiliExtractor(client, clock=lambda: 1_700_000_000).get_formats(
+    async with FakeHttpClient(handler) as client:
+        resolved = await BilibiliExtractor(client, clock=lambda: 1_700_000_000).get_formats(
             "BV1VF4111111"
         )
 
+    item = resolved.item
     tracks = item.pages[0].formats
     assert tracks[0].kind is MediaKind.VIDEO
     assert {track.codec_family for track in tracks} >= {
@@ -98,8 +95,19 @@ async def test_formats_projects_video_audio_and_hides_sources() -> None:
         CodecFamily.AAC,
     }
     avc = next(track for track in tracks if track.codec_family is CodecFamily.AVC)
+    av1 = next(track for track in tracks if track.codec_family is CodecFamily.AV1)
+    hdr = next(track for track in tracks if track.dynamic_range is DynamicRange.HDR)
+    dolby = next(track for track in tracks if track.dynamic_range is DynamicRange.DOLBY_VISION)
     assert len(avc.source.urls) == 2
     assert avc.source.required_headers["Referer"].endswith("BV1VF4111111")
+    assert av1.download_supported is True
+    assert hdr.codec_family is CodecFamily.HEVC and hdr.download_supported is True
+    assert dolby.download_supported is False
+    assert all(
+        track.download_supported is False
+        for track in tracks
+        if track.codec_family in {CodecFamily.FLAC, CodecFamily.EAC3}
+    )
     assert "media.invalid" not in item.model_dump_json()
     assert any(track.dynamic_range is DynamicRange.HDR for track in tracks)
 
@@ -117,12 +125,12 @@ def test_wbi_signing_is_deterministic() -> None:
 async def test_api_and_json_errors_stay_understandable() -> None:
     responses = iter(
         [
-            httpx.Response(200, content=b"not-json"),
-            httpx.Response(200, json={"code": -404, "message": "not found"}),
+            FakeResponse(200, content=b"not-json"),
+            FakeResponse(200, payload={"code": -404, "message": "not found"}),
         ]
     )
 
-    async with _client(lambda _: next(responses)) as client:
+    async with FakeHttpClient(lambda _: next(responses)) as client:
         extractor = BilibiliExtractor(client)
         with pytest.raises(ExtractionError, match="invalid JSON"):
             await extractor.get_info("BV1VF4111111")

@@ -1,11 +1,11 @@
 [project]
 name = "velafetch"
 version = "0.1.0"
-description = "A small Bilibili CLI for learning how media tools work."
+description = "A practical Bilibili CLI that grows from learning into real use."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "httpx>=0.28,<1",
+    "curl-cffi>=0.15,<1",
     "pydantic>=2.11,<3",
     "rich>=14,<15",
     "typer>=0.16,<1",

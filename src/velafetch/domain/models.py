@@ -15,6 +15,13 @@ class Site(StrEnum):
     BILIBILI = "bilibili"
 
 
+class MediaResourceKind(StrEnum):
+    VIDEO = "video"
+    BANGUMI_SEASON = "bangumi_season"
+    UGC_SEASON = "ugc_season"
+    UGC_SERIES = "ugc_series"
+
+
 class MediaKind(StrEnum):
     VIDEO = "video"
     AUDIO = "audio"
@@ -41,6 +48,12 @@ class CodecPreference(StrEnum):
     AUTO = "auto"
     AVC = "avc"
     HEVC = "hevc"
+    AV1 = "av1"
+
+
+class DynamicRangePreference(StrEnum):
+    SDR = "sdr"
+    HDR = "hdr"
 
 
 class OutputMode(StrEnum):
@@ -89,6 +102,7 @@ class MediaFormat(Model):
 
 class MediaRef(Model):
     site: Site
+    kind: MediaResourceKind = MediaResourceKind.VIDEO
     canonical_id: str
     canonical_url: str
     normalized_input: str
@@ -102,6 +116,11 @@ class MediaPage(Model):
     title: str
     duration_ms: int
     formats: tuple[MediaFormat, ...] = ()
+    avid: int | None = None
+    bvid: str | None = None
+    episode_id: int | None = None
+    canonical_url: str | None = None
+    cover: MediaSource | None = Field(default=None, repr=False, exclude=True)
 
 
 class MediaItem(Model):
@@ -109,9 +128,33 @@ class MediaItem(Model):
     title: str
     duration_ms: int
     pages: tuple[MediaPage, ...]
+    cover: MediaSource | None = Field(default=None, repr=False, exclude=True)
+
+
+class MediaCollectionEntry(Model):
+    index: int
+    entry_id: str
+    canonical_url: str
+    title: str
+    duration_ms: int
+    avid: int | None = None
+    bvid: str | None = None
+    cid: int | None = None
+    episode_id: int | None = None
+    cover: MediaSource | None = Field(default=None, repr=False, exclude=True)
+
+
+class MediaCollection(Model):
+    ref: MediaRef
+    title: str
+    entries: tuple[MediaCollectionEntry, ...]
+    selected_index: int = 1
+    selected_page: int = 1
+    cover: MediaSource | None = Field(default=None, repr=False, exclude=True)
 
 
 class SelectionPolicy(Model):
     quality: str = Field(default="best", pattern=r"^(best|[1-9][0-9]{2,4}p)$")
     codec: CodecPreference = CodecPreference.AUTO
+    dynamic_range: DynamicRangePreference = DynamicRangePreference.SDR
     output_mode: OutputMode = OutputMode.MUXED

@@ -3,6 +3,11 @@
 from velafetch.extractors.bilibili import (
     BilibiliExtractor,
     BilibiliInput,
+    BilibiliInputKind,
+    MediaAssets,
+    MediaResource,
+    ResolvedMedia,
+    SubtitleTrack,
     parse_bilibili_input,
     sign_wbi_query,
     sort_formats,
@@ -11,6 +16,11 @@ from velafetch.extractors.bilibili import (
 __all__ = [
     "BilibiliExtractor",
     "BilibiliInput",
+    "BilibiliInputKind",
+    "MediaResource",
+    "MediaAssets",
+    "ResolvedMedia",
+    "SubtitleTrack",
     "parse_bilibili_input",
     "sign_wbi_query",
     "sort_formats",

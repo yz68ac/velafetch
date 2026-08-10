@@ -8,6 +8,8 @@ from fractions import Fraction
 from velafetch.domain.models import (
     CodecFamily,
     CodecPreference,
+    DynamicRange,
+    DynamicRangePreference,
     MediaFormat,
     MediaKind,
     MediaPage,
@@ -31,7 +33,12 @@ def _select_video(formats: tuple[MediaFormat, ...], policy: SelectionPolicy) -> 
         for track in formats
         if track.kind is MediaKind.VIDEO
         and track.download_supported
-        and track.codec_family in {CodecFamily.AVC, CodecFamily.HEVC}
+        and track.codec_family in {CodecFamily.AVC, CodecFamily.HEVC, CodecFamily.AV1}
+        and (
+            track.dynamic_range is DynamicRange.SDR
+            if policy.dynamic_range is DynamicRangePreference.SDR
+            else track.dynamic_range is DynamicRange.HDR
+        )
     )
     if not candidates:
         raise SelectionError(
@@ -54,7 +61,11 @@ def _select_video(formats: tuple[MediaFormat, ...], policy: SelectionPolicy) -> 
     at_height = tuple(track for track in bounded if track.height == selected_height)
 
     if policy.codec is not CodecPreference.AUTO:
-        family = CodecFamily.AVC if policy.codec is CodecPreference.AVC else CodecFamily.HEVC
+        family = {
+            CodecPreference.AVC: CodecFamily.AVC,
+            CodecPreference.HEVC: CodecFamily.HEVC,
+            CodecPreference.AV1: CodecFamily.AV1,
+        }[policy.codec]
         at_height = tuple(track for track in at_height if track.codec_family is family)
         if not at_height:
             raise SelectionError(
@@ -67,7 +78,7 @@ def _select_video(formats: tuple[MediaFormat, ...], policy: SelectionPolicy) -> 
                 },
             )
 
-    codec_rank = {CodecFamily.AVC: 1, CodecFamily.HEVC: 0}
+    codec_rank = {CodecFamily.AVC: 2, CodecFamily.HEVC: 1, CodecFamily.AV1: 0}
 
     def rank(track: MediaFormat) -> tuple[object, ...]:
         frame_rate = Fraction(
