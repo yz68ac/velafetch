@@ -1,4 +1,7 @@
-# M4：第一个可下载版本
+# M4：第一个可下载版本（已完成）
+
+本文件保留 M4 完成时的历史设计。它当时刻意把备用地址、重试和续传留给 M5；这些能力
+后来以小型传输函数实现，当前行为见 [m5-plan.md](m5-plan.md)。
 
 M4 的目标不是一次做出“生产级下载器”，而是首次打通一条容易阅读和调试的完整路径：
 
@@ -51,9 +54,9 @@ velafetch download SOURCE [-o DIR] [--quality best|HEIGHTp]
 
 ### 3. 顺序传输
 
-- 复用同一个 `httpx.AsyncClient` 完成提取和媒体下载。
-- 使用 `client.stream("GET", primary_url, headers=required_headers)`，每次读取 256 KiB
-  并写入临时文件。
+- 复用同一个 `curl_cffi.AsyncSession` 完成提取和媒体下载。
+- 使用 `client.stream("GET", primary_url, headers=required_headers)`，立即消费 curl 产生的
+  数据块并写入临时文件；块大小由 libcurl 管理。
 - 检查 HTTP 成功状态；`Content-Length` 只用于显示进度，不建立完整性状态机。
 - M4 只请求每条轨道的第一个 URL。备用 URL、重试、Range 和 `.part` 续传留到 M5，在
   实际失败后实现。
@@ -84,7 +87,7 @@ velafetch download SOURCE [-o DIR] [--quality best|HEIGHTp]
 ## 测试
 
 - 选轨和四种输出模式生成正确的所需轨道与文件名。
-- `httpx.MockTransport` 提供假媒体字节，验证顺序流式写入。
+- 内存 HTTP fake 提供假媒体字节，验证顺序流式写入。
 - HTTP 错误不会产生最终文件，临时目录被清理。
 - 已有文件默认跳过，`--overwrite` 只替换完整结果。
 - monkeypatch `asyncio.create_subprocess_exec` 验证 FFmpeg 参数数组、非零退出和取消。
