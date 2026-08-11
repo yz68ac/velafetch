@@ -94,4 +94,5 @@ jobs:
         run: |
           mapfile -t assets < <(find release-assets -type f -print | sort)
           gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-            --verify-tag --generate-notes --title "VelaFetch $GITHUB_REF_NAME"
+            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --title "VelaFetch $GITHUB_REF_NAME"

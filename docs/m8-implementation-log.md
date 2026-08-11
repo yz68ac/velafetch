@@ -135,5 +135,13 @@ fresh wheel install needed temporary PyPI access because the workspace uv cache 
 all packages, and piping Rich help into `Select-Object` exposed a legacy Windows console error while
 direct terminal help worked normally.
 
-GitHub Actions cannot be reported before these changes are pushed. No `v0.2.0` tag or GitHub
-Release was created during implementation; publishing remains an explicit later action.
+## First GitHub run and publish correction
+
+After the implementation commit was pushed, the main-branch CI passed. The first `v0.2.0` Release
+run also built and smoke-tested both Python packages and the Windows portable archive, but its final
+`gh release create` command failed because the isolated publish job had no Git checkout from which
+GitHub CLI could infer the repository. No partial GitHub Release was created.
+
+The workflow now passes the Actions-provided `GITHUB_REPOSITORY` explicitly with `--repo`. The tag
+is moved to this corrective commit before the authoritative Release run, so the published source
+and workflow remain consistent.
