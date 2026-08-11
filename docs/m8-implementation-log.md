@@ -145,3 +145,9 @@ GitHub CLI could infer the repository. No partial GitHub Release was created.
 The workflow now passes the Actions-provided `GITHUB_REPOSITORY` explicitly with `--repo`. The tag
 is moved to this corrective commit before the authoritative Release run, so the published source
 and workflow remain consistent.
+
+That corrected run created the Release successfully. Post-publication inspection then found that
+the checksum file retained the internal `ffmpeg-sources/` staging path even though GitHub flattens
+asset names. Checksum generation now records basenames, and the publish step uploads with
+`--clobber` when the Release already exists. This makes a retry update the complete asset set
+instead of failing after a partial or previously successful publication.

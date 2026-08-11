@@ -83,16 +83,24 @@ jobs:
           merge-multiple: true
       - name: Generate SHA256SUMS.txt
         working-directory: release-assets
-        run: >-
-          find . -type f ! -name SHA256SUMS.txt -print0 |
-          sort -z |
-          xargs -0 sha256sum > SHA256SUMS.txt
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            hash="$(sha256sum "$file" | cut -d ' ' -f 1)"
+            printf '%s  %s\n' "$hash" "$(basename "$file")"
+          done < <(find . -type f ! -name SHA256SUMS.txt -print0 | sort -z) > SHA256SUMS.txt
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           mapfile -t assets < <(find release-assets -type f -print | sort)
-          gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
-            --title "VelaFetch $GITHUB_REF_NAME"
+          if gh release view "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+              --title "VelaFetch $GITHUB_REF_NAME"
+          fi
