@@ -5,10 +5,10 @@
 [![CI](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml/badge.svg)](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml)
 
 VelaFetch 是一个用于查看和下载 Bilibili 公开媒体或用户已获授权媒体的 Python 命令行工具。
-它既适合阅读学习，也能用于实际下载：从输入解析、DASH 选轨、断点续传到 FFmpeg 混流，
+从输入解析、DASH 选轨、断点续传到 FFmpeg 混流，
 完整主路径都由普通 Python 模块直接实现，没有引入插件框架。
 
-> 当前版本：`0.2.0`。M0-M7 已完成，M8 增加 Windows 便携包。项目仍处于预发布阶段，
+> 当前版本：`0.2.0`。
 > `1.0` 前 CLI 和 JSON 输出可能发生变化。
 
 ## 功能
@@ -40,7 +40,7 @@ VelaFetch 只使用 Bilibili 返回的普通未加密 DASH。不会绕过试看�
 
 ## 环境要求
 
-Windows x64 便携 ZIP 已包含 Python 和 FFmpeg，不需要单独安装运行环境。源码或 wheel
+Windows x64 Portable ZIP 已包含 Python 和 FFmpeg，不需要单独安装运行环境。源码或 wheel
 安装方式需要：
 
 - Python 3.12 或更高版本
@@ -49,7 +49,7 @@ Windows x64 便携 ZIP 已包含 Python 和 FFmpeg，不需要单独安装运行
 
 使用 `--video-only`、`--audio-only` 或 `--no-mux` 时不需要 FFmpeg。
 
-## Windows 便携版
+## Windows Portable
 
 从 [GitHub Releases](https://github.com/yz68ac/velafetch/releases) 下载
 `VelaFetch-0.2.0-windows-x64.zip` 和 `SHA256SUMS.txt`，校验后解压：
