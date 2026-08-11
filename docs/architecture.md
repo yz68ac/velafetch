@@ -29,6 +29,7 @@ The important modules are:
 - `auth`: strict Cookie parsing, cwd-local credential storage, QR polling, and account validation.
 - `application/download.py`: sequential enumeration, stop/continue rules, and item results.
 - `application/media_download.py`: one unit's transfer, mux, and media publication.
+- `application/ffmpeg.py`: configured, bundled, and PATH FFmpeg resolution.
 - `application/transfer.py`: one track's three attempts, backup URLs, Range resume, and length
   validation.
 - `application/assets.py`: cover, subtitle conversion, danmaku, and transactional sidecars.
@@ -72,3 +73,16 @@ The real HTTP session uses one bundled `chrome` profile so TLS and HTTP behavior
 consistent. It does not rotate profiles or identities, and environment proxy variables are
 disabled; only the explicit CLI proxy is passed through. Authenticated access changes only the
 cookie jar; it does not change TLS impersonation or request concurrency.
+
+The Python wheel remains platform-neutral and expects an external FFmpeg. The Windows x64 portable
+release is a PyInstaller onedir application with a pinned LGPL shared FFmpeg beside it:
+
+```text
+velafetch.exe -> explicit --ffmpeg
+              -> ffmpeg/bin/ffmpeg.exe when frozen
+              -> system PATH
+```
+
+Packaging code downloads only assets recorded by URL and SHA256 in the FFmpeg manifest. Binaries
+stay out of Git; CI assembles the portable ZIP and publishes the corresponding source snapshots,
+license notices, build configuration, and checksums with the release.

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+from velafetch.application.ffmpeg import resolve_ffmpeg
 from velafetch.transport import RequestError, create_http_client
 
 
@@ -41,12 +41,12 @@ class DoctorService:
 
     @staticmethod
     async def _check_ffmpeg(configured: Path | None) -> DoctorCheck:
-        executable = str(configured) if configured else shutil.which("ffmpeg")
-        if not executable:
+        location = resolve_ffmpeg(configured)
+        if location is None:
             return DoctorCheck("ffmpeg", "failed", "FFmpeg was not found.")
         try:
             process = await asyncio.create_subprocess_exec(
-                executable,
+                str(location.path),
                 "-version",
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.DEVNULL,
@@ -57,7 +57,11 @@ class DoctorService:
             return DoctorCheck("ffmpeg", "failed", "FFmpeg could not be started.")
         if process.returncode != 0:
             return DoctorCheck("ffmpeg", "failed", "FFmpeg returned an error.")
-        return DoctorCheck("ffmpeg", "ok", "FFmpeg is available.")
+        return DoctorCheck(
+            "ffmpeg",
+            "ok",
+            f"FFmpeg is available ({location.source.value}).",
+        )
 
     @staticmethod
     async def _check_network(

@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  python-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked --group dev
+      - name: Verify tag and package version
+        shell: bash
+        run: |
+          version="$(uv run python -c 'import velafetch; print(velafetch.__version__)')"
+          test "$GITHUB_REF_NAME" = "v$version"
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run pyright
+      - run: uv run pytest
+      - run: uv build
+      - name: Install and smoke-test the wheel
+        shell: bash
+        run: |
+          uv venv .wheel-venv
+          uv pip install --python .wheel-venv/bin/python dist/*.whl
+          .wheel-venv/bin/velafetch --version
+          .wheel-venv/bin/python -m velafetch --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-packages
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  windows-portable:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked --group dev
+      - name: Verify tag and package version
+        shell: pwsh
+        run: |
+          $version = uv run python -c "import velafetch; print(velafetch.__version__)"
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag and version differ." }
+      - run: uv run python scripts/build_portable.py
+      - name: Smoke-test the portable executable
+        shell: pwsh
+        run: |
+          $version = uv run python -c "import velafetch; print(velafetch.__version__)"
+          $root = "dist/VelaFetch-$version-windows-x64"
+          & "$root/velafetch.exe" --version
+          $doctor = & "$root/velafetch.exe" doctor --json | ConvertFrom-Json
+          $ffmpeg = $doctor.checks | Where-Object name -eq "ffmpeg"
+          if (-not $doctor.ok -or $null -eq $ffmpeg -or $ffmpeg.message -notlike "*bundled*") {
+            throw "Bundled FFmpeg smoke test failed."
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: |
+            dist/VelaFetch-*-windows-x64.zip
+            dist/ffmpeg-sources/*
+
+  publish:
+    needs: [python-packages, windows-portable]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Generate SHA256SUMS.txt
+        working-directory: release-assets
+        run: >-
+          find . -type f ! -name SHA256SUMS.txt -print0 |
+          sort -z |
+          xargs -0 sha256sum > SHA256SUMS.txt
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mapfile -t assets < <(find release-assets -type f -print | sort)
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+            --verify-tag --generate-notes --title "VelaFetch $GITHUB_REF_NAME"

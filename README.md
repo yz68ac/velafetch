@@ -9,7 +9,7 @@ It is built to be readable enough for learning and useful enough for real downlo
 path from input parsing and DASH track selection to resumable transfer and FFmpeg muxing lives in
 ordinary Python modules without a plugin framework.
 
-> Current version: `0.1.0`. M0-M6 are complete and M7 authentication is implemented. The project
+> Current version: `0.2.0`. M0-M7 are complete and M8 adds Windows portable packaging. The project
 > is still pre-release software; CLI and JSON output may change before `1.0`.
 
 ## Features
@@ -43,12 +43,31 @@ entitlements, region restrictions, access controls, and DRM are not bypassed.
 
 ## Requirements
 
+The Windows x64 portable ZIP includes Python and FFmpeg and has no separate runtime requirement.
+For source or wheel installations:
+
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/) for environment and package management
 - FFmpeg available on `PATH`, or supplied with the root `--ffmpeg` option, when using the default
   muxed output
 
 FFmpeg is not needed for `--video-only`, `--audio-only`, or `--no-mux`.
+
+## Windows portable release
+
+Download `VelaFetch-0.2.0-windows-x64.zip` and `SHA256SUMS.txt` from the
+[GitHub Releases page](https://github.com/yz68ac/velafetch/releases), then verify and extract it:
+
+```powershell
+Get-FileHash .\VelaFetch-0.2.0-windows-x64.zip -Algorithm SHA256
+Expand-Archive .\VelaFetch-0.2.0-windows-x64.zip
+.\VelaFetch-0.2.0-windows-x64\velafetch.exe doctor
+```
+
+The portable package uses PyInstaller `onedir`. Keep `velafetch.exe`, `_internal`, and `ffmpeg`
+together after extraction. It is currently unsigned, so Windows SmartScreen may show an unknown
+publisher warning. The bundled FFmpeg is a pinned Windows x64 LGPL shared build; its license,
+configuration, source locations, and checksums are included in the package and Release assets.
 
 ## Quick start
 
@@ -198,7 +217,8 @@ uv run velafetch doctor --json
 ```
 
 The default check validates FFmpeg without accessing the network. `--network` additionally checks
-Bilibili connectivity.
+Bilibili connectivity. `doctor` reports whether FFmpeg came from `--ffmpeg`, the portable bundle,
+or `PATH`.
 
 ## Project layout
 
@@ -229,14 +249,19 @@ uv run pyright
 uv run pytest
 uv lock --check
 uv build
+uv run python scripts/build_portable.py
 ```
+
+The portable build downloads only the FFmpeg archive pinned in
+`packaging/ffmpeg-windows-x64.json`; pass `--offline` to require a previously verified cache.
 
 Tests are offline and use an in-memory HTTP fake plus synthetic `.invalid` fixtures. There is no
 mandatory coverage percentage; tests are used to explain behavior, preserve contracts, and
 reproduce real bugs.
 
 Implementation notes are available for [M4](docs/m4-plan.md), [M5](docs/m5-plan.md),
-[M6](docs/m6-plan.md), and [M7](docs/m7-plan.md).
+[M6](docs/m6-plan.md), [M7](docs/m7-plan.md), and [M8](docs/m8-plan.md). The actual M8 work is
+recorded in the [implementation log](docs/m8-implementation-log.md).
 
 ## Legal and security
 
@@ -244,5 +269,5 @@ Use VelaFetch only for content you are permitted to access and save. The project
 payment, membership, region, access-control, or DRM bypasses. See
 [docs/legal-and-security.md](docs/legal-and-security.md) for the complete boundary.
 
-This repository currently has no open-source license. No redistribution rights are granted until a
-license is added.
+VelaFetch is licensed under the [MIT License](LICENSE). The bundled FFmpeg and Python dependencies
+retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

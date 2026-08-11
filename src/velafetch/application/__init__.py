@@ -10,6 +10,7 @@ from velafetch.application.download import (
     ProgressCallback,
     ProgressUpdate,
 )
+from velafetch.application.ffmpeg import FfmpegExecutable, FfmpegSource, resolve_ffmpeg
 from velafetch.application.media import MediaApplicationService
 from velafetch.application.naming import safe_filename
 
@@ -21,9 +22,12 @@ __all__ = [
     "DownloadResult",
     "DownloadService",
     "DownloadStatus",
+    "FfmpegExecutable",
+    "FfmpegSource",
     "MediaApplicationService",
     "ProgressCallback",
     "ProgressUpdate",
     "SubtitleOutputFormat",
     "safe_filename",
+    "resolve_ffmpeg",
 ]

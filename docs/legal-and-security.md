@@ -21,5 +21,8 @@ If Bilibili returns a normal, unencrypted DASH response for the current account,
 it. A missing entitlement, membership/paywall response, region denial, preview-only response, or
 DRM marker remains unsupported. There is no automatic Cookie refresh or remote account mutation.
 
-The project is private and has no redistribution license yet. Local reference repositories, when
-present, are reading material rather than runtime or build dependencies.
+VelaFetch's own source is distributed under the MIT License. Python dependencies and the optional
+Windows portable FFmpeg retain their own licenses. The portable archive includes the applicable
+license texts and exact FFmpeg build provenance; the matching FFmpeg and build-script source
+snapshots are published beside it in the same GitHub Release. Local reference repositories, when
+present, remain reading material rather than runtime or build dependencies.

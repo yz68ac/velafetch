@@ -8,7 +8,7 @@ VelaFetch 是一个用于查看和下载 Bilibili 公开媒体或用户已获授
 它既适合阅读学习，也能用于实际下载：从输入解析、DASH 选轨、断点续传到 FFmpeg 混流，
 完整主路径都由普通 Python 模块直接实现，没有引入插件框架。
 
-> 当前版本：`0.1.0`。M0-M6 已完成，M7 登录功能已经实现。项目仍处于预发布阶段，
+> 当前版本：`0.2.0`。M0-M7 已完成，M8 增加 Windows 便携包。项目仍处于预发布阶段，
 > `1.0` 前 CLI 和 JSON 输出可能发生变化。
 
 ## 功能
@@ -40,11 +40,29 @@ VelaFetch 只使用 Bilibili 返回的普通未加密 DASH。不会绕过试看�
 
 ## 环境要求
 
+Windows x64 便携 ZIP 已包含 Python 和 FFmpeg，不需要单独安装运行环境。源码或 wheel
+安装方式需要：
+
 - Python 3.12 或更高版本
 - 使用 [uv](https://docs.astral.sh/uv/) 管理环境和依赖
 - 默认混流输出需要 PATH 中存在 FFmpeg，也可以通过根级 `--ffmpeg` 指定路径
 
 使用 `--video-only`、`--audio-only` 或 `--no-mux` 时不需要 FFmpeg。
+
+## Windows 便携版
+
+从 [GitHub Releases](https://github.com/yz68ac/velafetch/releases) 下载
+`VelaFetch-0.2.0-windows-x64.zip` 和 `SHA256SUMS.txt`，校验后解压：
+
+```powershell
+Get-FileHash .\VelaFetch-0.2.0-windows-x64.zip -Algorithm SHA256
+Expand-Archive .\VelaFetch-0.2.0-windows-x64.zip
+.\VelaFetch-0.2.0-windows-x64\velafetch.exe doctor
+```
+
+便携包采用 PyInstaller `onedir`，解压后不要拆散 `velafetch.exe`、`_internal` 和 `ffmpeg`
+目录。当前产物尚未代码签名，Windows SmartScreen 可能提示未知发布者。内置 FFmpeg 是固定
+版本的 Windows x64 LGPL shared 构建，许可证、编译配置、源码位置和校验值均随包提供。
 
 ## 快速开始
 
@@ -188,7 +206,8 @@ uv run velafetch doctor --network
 uv run velafetch doctor --json
 ```
 
-默认只检查 FFmpeg，不访问网络。`--network` 会额外检查 Bilibili 连通性。
+默认只检查 FFmpeg，不访问网络。`--network` 会额外检查 Bilibili 连通性。`doctor` 还会
+说明 FFmpeg 来自 `--ffmpeg`、便携包还是 `PATH`。
 
 ## 项目结构
 
@@ -219,17 +238,23 @@ uv run pyright
 uv run pytest
 uv lock --check
 uv build
+uv run python scripts/build_portable.py
 ```
+
+便携构建只会下载 `packaging/ffmpeg-windows-x64.json` 中固定的 FFmpeg 资产；使用
+`--offline` 可以要求构建过程仅使用已校验的本地缓存。
 
 普通测试完全离线，使用内存 HTTP fake 和合成 `.invalid` fixtures。项目不强制固定覆盖率；
 测试用于解释行为、保护已有契约和复现真实 bug。
 
 实现记录见 [M4](docs/m4-plan.md)、[M5](docs/m5-plan.md)、[M6](docs/m6-plan.md) 和
-[M7](docs/m7-plan.md)。
+[M7](docs/m7-plan.md)、[M8](docs/m8-plan.md)。M8 的实际操作过程记录在
+[实施日志](docs/m8-implementation-log.md) 中。
 
 ## 法律与安全边界
 
 请只使用 VelaFetch 获取你有权访问和保存的内容。项目不实现付费、会员、地区、访问控制或
 DRM 绕过。完整边界见 [docs/legal-and-security.md](docs/legal-and-security.md)。
 
-此仓库目前没有开源许可证；添加许可证前，不授予再分发权利。
+VelaFetch 使用 [MIT License](LICENSE)。内置 FFmpeg 与 Python 依赖保留各自许可证，详见
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

@@ -9,3 +9,4 @@ def test_version_is_semantic() -> None:
     assert major.isdigit()
     assert minor.isdigit()
     assert patch.isdigit()
+    assert __version__ == "0.2.0"

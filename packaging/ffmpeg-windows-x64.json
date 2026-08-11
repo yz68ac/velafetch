@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "provider": "BtbN/FFmpeg-Builds",
+  "release_tag": "autobuild-2026-08-10-13-17",
+  "license": "LGPL-3.0-or-later",
+  "archive": {
+    "name": "ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-10-13-17/ffmpeg-n8.1.2-34-g9b6c8969e0-win64-lgpl-shared-8.1.zip",
+    "sha256": "bf54421a41a11eafdcff3241aeba812f5ab526d4d6942a5a83a9d4588b26cb6d",
+    "size": 70708851
+  },
+  "ffmpeg_source": {
+    "name": "ffmpeg-9b6c8969e05b4f0b29f0f85cd501be6b3e582e6b.tar.gz",
+    "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/9b6c8969e05b4f0b29f0f85cd501be6b3e582e6b",
+    "sha256": "7e779215eae16ad7e93ddad59bd82822bd3d34e4dc61f9996f9481b2c0605bc3",
+    "commit": "9b6c8969e05b4f0b29f0f85cd501be6b3e582e6b"
+  },
+  "build_scripts_source": {
+    "name": "btbn-ffmpeg-builds-2437e7b868da3c11872367b15f3c613b87c24819.tar.gz",
+    "url": "https://codeload.github.com/BtbN/FFmpeg-Builds/tar.gz/2437e7b868da3c11872367b15f3c613b87c24819",
+    "sha256": "f60b77676e5938a6e4767787b58f3703b6290bb9e3150fa339e218fc91c34430",
+    "commit": "2437e7b868da3c11872367b15f3c613b87c24819"
+  }
+}

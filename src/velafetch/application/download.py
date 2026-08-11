@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -16,6 +15,7 @@ from velafetch.application.assets import (
     download_subtitles,
     parse_subtitle_selection,
 )
+from velafetch.application.ffmpeg import resolve_ffmpeg
 from velafetch.application.media_download import download_media
 from velafetch.application.naming import (
     batch_output_root,
@@ -148,9 +148,10 @@ class DownloadService:
 
         ffmpeg = None
         if policy.output_mode is OutputMode.MUXED:
-            ffmpeg = str(ffmpeg_path) if ffmpeg_path else shutil.which("ffmpeg")
-            if ffmpeg is None:
+            ffmpeg_location = resolve_ffmpeg(ffmpeg_path)
+            if ffmpeg_location is None:
                 raise DownloadError("FFmpeg was not found. Use --ffmpeg to provide its path.")
+            ffmpeg = str(ffmpeg_location.path)
 
         credentials = None if anonymous else self._credential_store.load()
         cookies = None if credentials is None else credentials.cookie_mapping()

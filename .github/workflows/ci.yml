@@ -2,6 +2,9 @@ name: CI
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -10,7 +13,46 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
-      - run: uv sync --group dev
+      - run: uv sync --locked --group dev
+      - run: uv run ruff format --check .
       - run: uv run ruff check .
       - run: uv run pyright
       - run: uv run pytest
+      - run: uv lock --check
+      - run: uv build
+      - name: Install and smoke-test the wheel
+        shell: bash
+        run: |
+          uv venv .wheel-venv
+          uv pip install --python .wheel-venv/bin/python dist/*.whl
+          .wheel-venv/bin/velafetch --version
+          .wheel-venv/bin/python -m velafetch --version
+
+  windows-portable:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked --group dev
+      - name: Build the Windows x64 portable ZIP
+        run: uv run python scripts/build_portable.py
+      - name: Smoke-test the portable executable and bundled FFmpeg
+        shell: pwsh
+        run: |
+          $version = uv run python -c "import velafetch; print(velafetch.__version__)"
+          $root = "dist/VelaFetch-$version-windows-x64"
+          & "$root/velafetch.exe" --version
+          $doctor = & "$root/velafetch.exe" doctor --json | ConvertFrom-Json
+          if (-not $doctor.ok) { throw "Portable doctor check failed." }
+          $ffmpeg = $doctor.checks | Where-Object name -eq "ffmpeg"
+          if ($null -eq $ffmpeg -or $ffmpeg.message -notlike "*bundled*") {
+            throw "Portable build did not select bundled FFmpeg."
+          }
+          & "$root/ffmpeg/bin/ffmpeg.exe" -version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VelaFetch-windows-x64
+          path: dist/VelaFetch-*-windows-x64.zip
+          retention-days: 7

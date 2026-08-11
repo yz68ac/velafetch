@@ -17,6 +17,7 @@ htmlcov/
 build/
 dist/
 *.spec
+!packaging/velafetch.spec
 
 # Local references: nested repositories are never part of VelaFetch
 /references/
