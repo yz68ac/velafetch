@@ -13,18 +13,42 @@
    和 `ffmpeg` 文件夹。
 3. 点击文件资源管理器顶部的地址栏，输入 `powershell` 后按回车。系统会在当前文件夹打开一个
    蓝色命令窗口。
-4. 把下面的示例地址换成要下载的 Bilibili 视频链接或 BV 号，粘贴命令并按回车：
+4. 普通公开视频可以跳过登录。如果需要账号权限或账号可用的画质，请先完成下面的登录流程：
+
+   1. 在刚才打开的 PowerShell 中运行：
+
+      ```powershell
+      .\velafetch.exe auth login
+      ```
+
+   2. 终端会显示一个二维码。打开手机 Bilibili 客户端的“扫一扫”，扫描二维码，然后在手机上
+      确认登录。在成功前不要关闭 PowerShell。
+   3. 看到 `Logged in as 用户名 (UID ...)` 就表示登录成功。可以再运行下面的命令检查：
+
+      ```powershell
+      .\velafetch.exe auth status
+      ```
+
+      状态表中的 `Logged in` 显示 `yes` 即可。登录信息会自动保存在当前解压目录的
+      `.velafetch` 文件夹，以后从这个目录运行时不用重复扫码。
+
+   如果二维码过期或超时，重新运行 `auth login` 即可。如果无法扫码，可以运行
+   `.\velafetch.exe auth import-cookie`，在 `Cookie:` 提示后粘贴已登录 Bilibili 网页的完整
+   Cookie 并按回车；粘贴内容不会显示在屏幕上。Cookie 相当于登录凭证，请勿截图、分享或发给
+   任何人。
+5. 把下面的示例地址换成要下载的 Bilibili 视频链接或 BV 号，粘贴命令并按回车：
 
    ```powershell
    .\velafetch.exe download "https://www.bilibili.com/video/BV..." -o downloads
    ```
 
-5. 等命令运行完成，视频就在新建的 `downloads` 文件夹里。全程不用安装 Python、uv 或
+6. 等命令运行完成，视频就在新建的 `downloads` 文件夹里。全程不用安装 Python、uv 或
    FFmpeg。
 
-下载整个多 P、番剧季度或合集时，在命令末尾加 `--all`。如果视频需要登录后才能播放，先运行
-`.\velafetch.exe auth login`，再按提示扫码。程序目前没有代码签名，Windows 可能提示“未知发布者”；
-请只在确认 ZIP 来自上方官方 Releases 页面时继续运行。
+下载整个多 P、番剧季度或合集时，在命令末尾加 `--all`。想删除本机保存的登录信息时运行
+`.\velafetch.exe auth logout`；这只会清除 VelaFetch 的本地登录，不会让手机或浏览器退出账号。
+程序目前没有代码签名，Windows 可能提示“未知发布者”；请只在确认 ZIP 来自上方官方 Releases
+页面时继续运行。
 
 VelaFetch 是一个用于查看和下载 Bilibili 公开媒体或用户已获授权媒体的 Python 命令行工具。
 从输入解析、DASH 选轨、断点续传到 FFmpeg 混流，

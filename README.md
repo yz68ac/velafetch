@@ -14,20 +14,44 @@
    `velafetch.exe` away from the `_internal` and `ffmpeg` folders.
 3. Click the File Explorer address bar, type `powershell`, and press Enter. A blue terminal window
    will open in the correct folder.
-4. Replace the example address below with a Bilibili video URL or BV ID, then paste the command and
+4. You can skip login for ordinary public videos. If the media or quality requires your account,
+   complete these login steps first:
+
+   1. Run this in the PowerShell window you just opened:
+
+      ```powershell
+      .\velafetch.exe auth login
+      ```
+
+   2. A QR code will appear in the terminal. Open the scanner in the Bilibili mobile app, scan the
+      code, and confirm the login on your phone. Keep PowerShell open until it succeeds.
+   3. Login is complete when you see `Logged in as USERNAME (UID ...)`. You can verify it with:
+
+      ```powershell
+      .\velafetch.exe auth status
+      ```
+
+      `Logged in` should show `yes`. The login is saved automatically in the `.velafetch` folder
+      inside the extracted directory, so you do not need to scan again when running from there.
+
+   If the QR code expires or times out, run `auth login` again. If scanning is unavailable, run
+   `.\velafetch.exe auth import-cookie`, paste the complete Cookie from an already logged-in
+   Bilibili browser session at the `Cookie:` prompt, and press Enter. The pasted text stays hidden.
+   A Cookie is equivalent to a login credential: never screenshot, share, or send it to anyone.
+5. Replace the example address below with a Bilibili video URL or BV ID, then paste the command and
    press Enter:
 
    ```powershell
    .\velafetch.exe download "https://www.bilibili.com/video/BV..." -o downloads
    ```
 
-5. When it finishes, the video is in the newly created `downloads` folder. No Python, uv, or FFmpeg
+6. When it finishes, the video is in the newly created `downloads` folder. No Python, uv, or FFmpeg
    installation is needed.
 
-For a multi-part video, season, or collection, add `--all` to download everything. If playback
-requires your account, run `.\velafetch.exe auth login` first and scan the QR code. The executable is
-currently unsigned, so Windows may display an unknown-publisher warning; only continue when the ZIP
-came from the official Releases page above.
+For a multi-part video, season, or collection, add `--all` to download everything. Run
+`.\velafetch.exe auth logout` to remove the login saved by VelaFetch from this computer; this does not
+log your phone or browser out. The executable is currently unsigned, so Windows may display an
+unknown-publisher warning; only continue when the ZIP came from the official Releases page above.
 
 VelaFetch is a Python CLI for inspecting and downloading public or user-authorized Bilibili media.
 It is built to be readable enough for learning and useful enough for real downloads: the complete
