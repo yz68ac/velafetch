@@ -4,6 +4,31 @@
 
 [![CI](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml/badge.svg)](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml)
 
+## Beginner guide (Windows, no setup required)
+
+1. Open [GitHub Releases](https://github.com/yz68ac/velafetch/releases) and download
+   `VelaFetch-0.2.0-windows-x64.zip`. Do not download the automatically generated "Source code"
+   archives.
+2. Right-click the ZIP and select **Extract All**. Open the extracted
+   `VelaFetch-0.2.0-windows-x64` folder. Do not run the program from inside the ZIP, and do not move
+   `velafetch.exe` away from the `_internal` and `ffmpeg` folders.
+3. Click the File Explorer address bar, type `powershell`, and press Enter. A blue terminal window
+   will open in the correct folder.
+4. Replace the example address below with a Bilibili video URL or BV ID, then paste the command and
+   press Enter:
+
+   ```powershell
+   .\velafetch.exe download "https://www.bilibili.com/video/BV..." -o downloads
+   ```
+
+5. When it finishes, the video is in the newly created `downloads` folder. No Python, uv, or FFmpeg
+   installation is needed.
+
+For a multi-part video, season, or collection, add `--all` to download everything. If playback
+requires your account, run `.\velafetch.exe auth login` first and scan the QR code. The executable is
+currently unsigned, so Windows may display an unknown-publisher warning; only continue when the ZIP
+came from the official Releases page above.
+
 VelaFetch is a Python CLI for inspecting and downloading public or user-authorized Bilibili media.
 It is built to be readable enough for learning and useful enough for real downloads: the complete
 path from input parsing and DASH track selection to resumable transfer and FFmpeg muxing lives in

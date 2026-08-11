@@ -4,6 +4,28 @@
 
 [![CI](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml/badge.svg)](https://github.com/yz68ac/velafetch/actions/workflows/ci.yml)
 
+## 纯小白用法（Windows，无需安装环境）
+
+1. 打开 [GitHub Releases](https://github.com/yz68ac/velafetch/releases)，下载
+   `VelaFetch-0.2.0-windows-x64.zip`。不要下载页面自动生成的 “Source code” 压缩包。
+2. 右键 ZIP，选择**全部解压缩**，然后进入解压出的 `VelaFetch-0.2.0-windows-x64` 文件夹。
+   不要直接在压缩包里运行，也不要把 `velafetch.exe` 单独移走；它需要旁边的 `_internal`
+   和 `ffmpeg` 文件夹。
+3. 点击文件资源管理器顶部的地址栏，输入 `powershell` 后按回车。系统会在当前文件夹打开一个
+   蓝色命令窗口。
+4. 把下面的示例地址换成要下载的 Bilibili 视频链接或 BV 号，粘贴命令并按回车：
+
+   ```powershell
+   .\velafetch.exe download "https://www.bilibili.com/video/BV..." -o downloads
+   ```
+
+5. 等命令运行完成，视频就在新建的 `downloads` 文件夹里。全程不用安装 Python、uv 或
+   FFmpeg。
+
+下载整个多 P、番剧季度或合集时，在命令末尾加 `--all`。如果视频需要登录后才能播放，先运行
+`.\velafetch.exe auth login`，再按提示扫码。程序目前没有代码签名，Windows 可能提示“未知发布者”；
+请只在确认 ZIP 来自上方官方 Releases 页面时继续运行。
+
 VelaFetch 是一个用于查看和下载 Bilibili 公开媒体或用户已获授权媒体的 Python 命令行工具。
 从输入解析、DASH 选轨、断点续传到 FFmpeg 混流，
 完整主路径都由普通 Python 模块直接实现，没有引入插件框架。
